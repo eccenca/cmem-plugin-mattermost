@@ -1,86 +1,181 @@
-"""Random values workflow plugin module"""
-import uuid
-from secrets import token_urlsafe
-from typing import Sequence
+"""A Mattermost integration Plugin"""
 
-from cmem_plugin_base.dataintegration.context import ExecutionContext, ExecutionReport
+import requests
 from cmem_plugin_base.dataintegration.description import Plugin, PluginParameter
-from cmem_plugin_base.dataintegration.entity import (
-    Entities,
-    Entity,
-    EntitySchema,
-    EntityPath,
-)
 from cmem_plugin_base.dataintegration.plugins import WorkflowPlugin
 
 
 @Plugin(
-    label="Random Values (mattermost)",
-    description="Generates random values of X rows a Y values.",
-    documentation="""
-This example workflow operator generates random values.
+    label="automated messages (mattermost-integration)",
+    description="Sends automated messages in Mattermost channels or direct to users ",
+    documentation="""This Plugin sends messages via
+    Mattermost bot/bots to channel or users.
 
-The values are generated in X rows a Y values. Both parameter can be specified:
+The Plugin can sends automated messages to different
+server, teams, channel, user via different bots only by the name of
+the team, channel, user.
 
-- 'number_of_entities': How many rows do you need.
-- 'number_of_values': How many values per row do you need.
+- 'url' = URL for the Mattermost API
+- 'access_token' = The access token of the bot
+_ 'bot_name' = the bot name you want to post the message with
+_ 'user_name' = the username you want to get the message
+_ 'channel_name' = channel name you want to post the message in
+_ 'team_name' = the team name of the channel you want to post the message in
+_ 'message' = the message you want to send
 """,
     parameters=[
         PluginParameter(
-            name="number_of_entities",
-            label="Entities (Rows)",
-            description="How many rows will be created per run.",
-            default_value="10",
+            name="url",
+            label="string",
+            description="The url of the mattermost server you want to use.",
+            default_value=None,
         ),
         PluginParameter(
-            name="number_of_values",
+            name="access_token",
             label="Values (Columns)",
-            description="How many values are created per entity / row.",
-            default_value="5",
+            description="The access token of the bot which"
+            " was given when the bot was created.",
+            default_value=None,
+        ),
+        PluginParameter(
+            name="bot_name",
+            label="string",
+            description="The name of the bot you will send with.",
+            default_value=None,
+        ),
+        PluginParameter(
+            name="user_name",
+            label="string",
+            description="The user name you want to get the message.",
+            default_value=None,
+        ),
+        PluginParameter(
+            name="channel_name",
+            label="string",
+            description="The name of the channel you want to get the message.",
+            default_value=None,
+        ),
+        PluginParameter(
+            name="team_name",
+            label="string",
+            description="The name of the team where the channel is in ",
+            default_value=None,
+        ),
+        PluginParameter(
+            name="message",
+            label="string",
+            description="Words, which together will be a message :-)",
+            default_value=None,
         ),
     ],
 )
-class DollyPlugin(WorkflowPlugin):
-    """Example Workflow Plugin: Random Values"""
+class MattermostPlugin(WorkflowPlugin):
+    """A Mattermost integration Plugin with static messaging"""
+    # pylint: disable=R0913
 
-    def __init__(self, number_of_entities: int = 10, number_of_values: int = 5) -> None:
-        if number_of_entities < 1:
-            raise ValueError("Entities (Rows) needs to be a positive integer.")
+    def __init__(
+        self,
+        url: str,
+        access_token: str,
+        bot_name: str,
+        user_name: str,
+        channel_name: str,
+        team_name: str,
+        message: str,
+    ) -> None:
 
-        if number_of_values < 1:
-            raise ValueError("Values (Columns) needs to be a positive integer.")
+        self.url = url
+        self.access_token = access_token
+        self.bot_name = bot_name
+        self.user_name = user_name
+        self.channel_name = channel_name
+        self.team_name = team_name
+        self.message = message
 
-        self.number_of_entities = number_of_entities
-        self.number_of_values = number_of_values
 
-    def execute(
-        self, inputs: Sequence[Entities], context: ExecutionContext
-    ) -> Entities:
-        self.log.info("Start creating random values.")
-        self.log.info(f"Config length: {len(self.config.get())}")
-        value_counter = 0
-        entities = []
-        for _ in range(self.number_of_entities):
-            entity_uri = f"urn:uuid:{str(uuid.uuid4())}"
-            values = []
-            for _ in range(self.number_of_values):
-                values.append([token_urlsafe(16)])
-                value_counter += 1
-                context.report.update(
-                    ExecutionReport(
-                        entity_count=value_counter,
-                        operation="wait",
-                        operation_desc="random values generated",
-                    )
-                )
-            entities.append(Entity(uri=entity_uri, values=values))
-        paths = []
-        for path_no in range(self.number_of_values):
-            path_uri = f"https://example.org/vocab/RandomValuePath/{path_no}"
-            paths.append(EntityPath(path=path_uri))
-        schema = EntitySchema(
-            type_uri="https://example.org/vocab/RandomValueRow",
-            paths=paths,
-        )
-        self.log.info(f"Happy to serve {value_counter} random values.")
-        return Entities(entities=entities, schema=schema)
+def send_message_with_bot_to_user(self):
+    """sends messages from bot to user."""
+
+    # Request to find the bot ID with the bot name
+    response = requests.post(
+        f"{self.url}/api/v4/users/search",
+        headers={
+            "Authorization": f"Bearer {self.access_token}",
+        },
+        json={"term": self.bot_name},
+        timeout=5,
+    )
+
+    bot_data = response.json()[0]
+
+    bot_id = bot_data["id"]
+
+    # Request to find the user ID with the username
+    response = requests.post(
+        f"{self.url}/api/v4/users/search",
+        headers={
+            "Authorization": f"Bearer {self.access_token}",
+        },
+        json={"term": self.user_name},
+        timeout=5,
+    )
+
+    user_data = response.json()[0]
+
+    user_id = user_data["id"]
+
+    headers = {
+        "Authorization": f"Bearer {self.access_token}",
+    }
+    # payload for json to generate a direct channel with post request
+    data = [bot_id, user_id]
+    # post request to generate the direct channel
+    response = requests.post(
+        f"{self.url}/api/v4/channels/direct", headers=headers, json=data, timeout=5
+    )
+
+    channel_id = response.json()["id"]
+
+    # payload for the json to generate the message
+    payload = {"channel_id": channel_id, "message": self.message}
+
+    # post request to send the message
+    response = requests.post(
+        f"{self.url}/api/v4/posts", headers=headers, json=payload, timeout=5
+    )
+
+    if response.status_code != 201:
+        print(f"An error occurred: {response.text}")
+    else:
+        print("Message sent successfully!")
+
+
+def send_message_with_bot_to_channel(self):
+    """sends messages from bot to channel."""
+
+    headers = {
+        "Authorization": f"Bearer {self.access_token}",
+    }
+
+    # generate a channel_id
+    response = requests.get(
+        f"{self.url}/api/v4/teams/name/{self.team_name}"
+        f"/channels/name/{self.channel_name}",
+        headers=headers,
+        timeout=5,
+    )
+
+    channel_id = response.json()["id"]
+
+    # payload
+    data = {"channel_id": channel_id, "message": self.message}
+
+    # Post request for the message
+    response = requests.post(
+        f"{self.url}/api/v4/posts", headers=headers, json=data, timeout=5
+    )
+
+    if response.status_code != 201:
+        print(f"An error occurred: {response.text}")
+    else:
+        print("Message sent successfully!")
