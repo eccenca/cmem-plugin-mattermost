@@ -92,6 +92,9 @@ class MattermostPlugin(WorkflowPlugin):
         self.team_name = team_name
         self.message = message
 
+        send_message_with_bot_to_user(self)
+        send_message_with_bot_to_channel(self)
+
 
 def send_message_with_bot_to_user(self):
     """sends messages from bot to user."""
