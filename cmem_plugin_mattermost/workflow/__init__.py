@@ -1,5 +1,4 @@
 """A Mattermost integration Plugin"""
-
 import requests
 from cmem_plugin_base.dataintegration.description import Plugin, PluginParameter
 from cmem_plugin_base.dataintegration.plugins import WorkflowPlugin
@@ -23,47 +22,49 @@ _ 'channel_name' = channel name you want to post the message in
 _ 'team_name' = the team name of the channel you want to post the message in
 _ 'message' = the message you want to send
 """,
+
+
     parameters=[
         PluginParameter(
             name="url",
-            label="string",
+            label="URL",
             description="The url of the mattermost server you want to use.",
-            default_value=None,
+            default_value="https://chat.eccenca.com",
         ),
         PluginParameter(
             name="access_token",
-            label="Values (Columns)",
+            label="Access Token",
             description="The access token of the bot which"
             " was given when the bot was created.",
-            default_value=None,
+            default_value="Need to fill",
         ),
         PluginParameter(
             name="bot_name",
-            label="string",
+            label="Bot ID",
             description="The name of the bot you will send with.",
-            default_value=None,
+            default_value="Need to be filled for user message.",
         ),
         PluginParameter(
             name="user_name",
-            label="string",
+            label="Username",
             description="The user name you want to get the message.",
-            default_value=None,
+            default_value="Need to be filled for user message.",
         ),
         PluginParameter(
             name="channel_name",
-            label="string",
+            label="Channel name",
             description="The name of the channel you want to get the message.",
-            default_value=None,
+            default_value="Need to be filled for channel message.",
         ),
         PluginParameter(
             name="team_name",
-            label="string",
+            label="Team name",
             description="The name of the team where the channel is in ",
-            default_value=None,
+            default_value="Need to be filled for user message.",
         ),
         PluginParameter(
             name="message",
-            label="string",
+            label="Message",
             description="Words, which together will be a message :-)",
             default_value=None,
         ),
@@ -71,8 +72,8 @@ _ 'message' = the message you want to send
 )
 class MattermostPlugin(WorkflowPlugin):
     """A Mattermost integration Plugin with static messaging"""
-    # pylint: disable=R0913
 
+    # pylint: disable=R0913
     def __init__(
         self,
         url: str,
@@ -99,58 +100,50 @@ class MattermostPlugin(WorkflowPlugin):
 def send_message_with_bot_to_user(self):
     """sends messages from bot to user."""
 
-    # Request to find the bot ID with the bot name
-    response = requests.post(
-        f"{self.url}/api/v4/users/search",
-        headers={
-            "Authorization": f"Bearer {self.access_token}",
-        },
-        json={"term": self.bot_name},
-        timeout=5,
-    )
-
-    bot_data = response.json()[0]
-
-    bot_id = bot_data["id"]
-
-    # Request to find the user ID with the username
-    response = requests.post(
-        f"{self.url}/api/v4/users/search",
-        headers={
-            "Authorization": f"Bearer {self.access_token}",
-        },
-        json={"term": self.user_name},
-        timeout=5,
-    )
-
-    user_data = response.json()[0]
-
-    user_id = user_data["id"]
-
     headers = {
         "Authorization": f"Bearer {self.access_token}",
     }
-    # payload for json to generate a direct channel with post request
-    data = [bot_id, user_id]
-    # post request to generate the direct channel
+    # Request to find the bot ID with the bot name
     response = requests.post(
-        f"{self.url}/api/v4/channels/direct", headers=headers, json=data, timeout=5
+        f"{self.url}/api/v4/users/search",
+        headers=headers,
+        json={"term": self.bot_name},
+        timeout=5,
     )
-
-    channel_id = response.json()["id"]
-
-    # payload for the json to generate the message
-    payload = {"channel_id": channel_id, "message": self.message}
-
-    # post request to send the message
-    response = requests.post(
-        f"{self.url}/api/v4/posts", headers=headers, json=payload, timeout=5
-    )
-
     if response.status_code != 201:
-        print(f"An error occurred: {response.text}")
-    else:
-        print("Message sent successfully!")
+        bot_data = response.json()[0]
+        bot_id = bot_data["id"]
+
+        # Request to find the user ID with the username
+        response = requests.post(
+            f"{self.url}/api/v4/users/search",
+            headers=headers,
+            json={"term": self.user_name},
+            timeout=5,
+        )
+        if response.status_code != 201:
+            user_data = response.json()[0]
+            user_id = user_data["id"]
+
+            # payload for json to generate a direct channel with post request
+            data = [bot_id, user_id]
+            # post request to generate the direct channel
+            response = requests.post(
+                f"{self.url}/api/v4/channels/direct",
+                headers=headers,
+                json=data,
+                timeout=5,
+            )
+
+            channel_id = response.json()["id"]
+
+            # payload for the json to generate the message
+            payload = {"channel_id": channel_id, "message": self.message}
+
+            # post request to send the message
+            requests.post(
+                f"{self.url}/api/v4/posts", headers=headers, json=payload, timeout=5
+            )
 
 
 def send_message_with_bot_to_channel(self):
@@ -167,18 +160,9 @@ def send_message_with_bot_to_channel(self):
         headers=headers,
         timeout=5,
     )
-
-    channel_id = response.json()["id"]
-
-    # payload
-    data = {"channel_id": channel_id, "message": self.message}
-
-    # Post request for the message
-    response = requests.post(
-        f"{self.url}/api/v4/posts", headers=headers, json=data, timeout=5
-    )
-
     if response.status_code != 201:
-        print(f"An error occurred: {response.text}")
-    else:
-        print("Message sent successfully!")
+        channel_id = response.json()["id"]
+        # payload
+        data = {"channel_id": channel_id, "message": self.message}
+        # Post request for the message
+        requests.post(f"{self.url}/api/v4/posts", headers=headers, json=data, timeout=5)
