@@ -22,8 +22,6 @@ _ 'channel_name' = channel name you want to post the message in
 _ 'team_name' = the team name of the channel you want to post the message in
 _ 'message' = the message you want to send
 """,
-
-
     parameters=[
         PluginParameter(
             name="url",
@@ -34,39 +32,34 @@ _ 'message' = the message you want to send
         PluginParameter(
             name="access_token",
             label="Access Token",
-            description="The access token of the bot which"
-            " was given when the bot was created.",
+            description="The access token of the bot,"
+                        "which was given when the bot was created.",
             default_value="Need to fill",
         ),
         PluginParameter(
             name="bot_name",
-            label="Bot ID",
-            description="The name of the bot you will send with.",
+            label="Bot name",
+            description="The name or id of the bot you will send with.",
             default_value="Need to be filled for user message.",
         ),
         PluginParameter(
-            name="user_name",
+            name="user",
             label="Username",
-            description="The user name you want to get the message.",
+            description="The full name, username,"
+                        "nickname or email of the user you want to get the message.",
             default_value="Need to be filled for user message.",
         ),
         PluginParameter(
-            name="channel_name",
+            name="channel",
             label="Channel name",
-            description="The name of the channel you want to get the message.",
+            description="The name or id of the channel you want to get the message.",
             default_value="Need to be filled for channel message.",
-        ),
-        PluginParameter(
-            name="team_name",
-            label="Team name",
-            description="The name of the team where the channel is in ",
-            default_value="Need to be filled for user message.",
         ),
         PluginParameter(
             name="message",
             label="Message",
             description="Words, which together will be a message :-)",
-            default_value=None,
+            default_value="Type messages here.",
         ),
     ],
 )
@@ -79,18 +72,16 @@ class MattermostPlugin(WorkflowPlugin):
         url: str,
         access_token: str,
         bot_name: str,
-        user_name: str,
-        channel_name: str,
-        team_name: str,
+        user: str,
+        channel: str,
         message: str,
     ) -> None:
 
         self.url = url
         self.access_token = access_token
         self.bot_name = bot_name
-        self.user_name = user_name
-        self.channel_name = channel_name
-        self.team_name = team_name
+        self.user = user
+        self.channel = channel
         self.message = message
 
         send_message_with_bot_to_user(self)
@@ -104,46 +95,53 @@ def send_message_with_bot_to_user(self):
         "Authorization": f"Bearer {self.access_token}",
     }
     # Request to find the bot ID with the bot name
+    response = requests.get(
+        f"{self.url}/api/v4/bots",
+        headers=headers,
+        timeout=5,
+    )
+    i = 0
+    while i != len(response.json()) and (
+            response.json()[i]["username"] not in self.bot_name
+            and response.json()[i]["display_name"] not in self.bot_name
+    ):
+        i += 1
+    if i != len(response.json()) and (
+            response.json()[i]["username"] in self.bot_name
+            or response.json()[i]["display_name"] in self.bot_name
+    ):
+        bot_id = response.json()[i]["user_id"]
+    else:
+        bot_id = ""
+    # Request to find the user ID with the username
     response = requests.post(
         f"{self.url}/api/v4/users/search",
         headers=headers,
-        json={"term": self.bot_name},
+        json={"term": self.user},
         timeout=5,
     )
-    if response.status_code != 201:
-        bot_data = response.json()[0]
-        bot_id = bot_data["id"]
+    if response.status_code == 200:
+        user_id = response.json()[0]["id"]
 
-        # Request to find the user ID with the username
+        # payload for json to generate a direct channel with post request
+        data = [bot_id, user_id]
+        # post request to generate the direct channel
         response = requests.post(
-            f"{self.url}/api/v4/users/search",
+            f"{self.url}/api/v4/channels/direct",
             headers=headers,
-            json={"term": self.user_name},
+            json=data,
             timeout=5,
         )
-        if response.status_code != 201:
-            user_data = response.json()[0]
-            user_id = user_data["id"]
 
-            # payload for json to generate a direct channel with post request
-            data = [bot_id, user_id]
-            # post request to generate the direct channel
-            response = requests.post(
-                f"{self.url}/api/v4/channels/direct",
-                headers=headers,
-                json=data,
-                timeout=5,
-            )
+        channel_id = response.json()["id"]
 
-            channel_id = response.json()["id"]
+        # payload for the json to generate the message
+        payload = {"channel_id": channel_id, "message": self.message}
 
-            # payload for the json to generate the message
-            payload = {"channel_id": channel_id, "message": self.message}
-
-            # post request to send the message
-            requests.post(
-                f"{self.url}/api/v4/posts", headers=headers, json=payload, timeout=5
-            )
+        # post request to send the message
+        requests.post(
+            f"{self.url}/api/v4/posts", headers=headers, json=payload, timeout=5
+        )
 
 
 def send_message_with_bot_to_channel(self):
@@ -155,14 +153,26 @@ def send_message_with_bot_to_channel(self):
 
     # generate a channel_id
     response = requests.get(
-        f"{self.url}/api/v4/teams/name/{self.team_name}"
-        f"/channels/name/{self.channel_name}",
-        headers=headers,
+        f"{self.url}/api/v4/channels",
+        headers={
+            "Authorization": f"Bearer {self.access_token}",
+        },
         timeout=5,
     )
-    if response.status_code != 201:
-        channel_id = response.json()["id"]
-        # payload
-        data = {"channel_id": channel_id, "message": self.message}
-        # Post request for the message
-        requests.post(f"{self.url}/api/v4/posts", headers=headers, json=data, timeout=5)
+    i = 0
+    while i != len(response.json()) and (
+        response.json()[i]["display_name"] not in self.channel
+        and response.json()[i]["name"] not in self.channel
+    ):
+        i += 1
+    if i != len(response.json()) and (
+        response.json()[i]["display_name"] in self.channel
+        or response.json()[i]["name"] in self.channel
+    ):
+        channel_id = response.json()[i]["id"]
+    else:
+        channel_id = ""
+    # payload
+    data = {"channel_id": channel_id, "message": self.message}
+    # Post request for the message
+    requests.post(f"{self.url}/api/v4/posts", headers=headers, json=data, timeout=5)
