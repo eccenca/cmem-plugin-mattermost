@@ -46,7 +46,9 @@ _ 'message' = the message you want to send
             name="user",
             label="Username",
             description="The full name, username,"
-            "nickname or email of the user you want to get the message.",
+            " nickname or email of the user you want to get the message."
+            " If you want to send your message to multiple"
+            " user separate them with a semicolon ';'.",
             default_value="Need to be filled for user message.",
         ),
         PluginParameter(
@@ -111,35 +113,40 @@ def send_message_with_bot_to_user(self):
             break
         i += 1
 
-    # Request to find the user ID with the username
-    response = requests.post(
-        f"{self.url}/api/v4/users/search",
-        headers=headers,
-        json={"term": self.user},
-        timeout=5,
-    )
-    if response.status_code == 200 and response.json() != []:
-        user_id = response.json()[0]["id"]
-
-        # payload for json to generate a direct channel with post request
-        data = [bot_id, user_id]
-        # post request to generate the direct channel
+    user_list = self.user.split(sep=";")
+    i = 0
+    for _ in user_list:
+        user_request = user_list[i].lstrip()
+        # Request to find the user ID with the username
         response = requests.post(
-            f"{self.url}/api/v4/channels/direct",
+            f"{self.url}/api/v4/users/search",
             headers=headers,
-            json=data,
+            json={"term": user_request},
             timeout=5,
         )
+        if response.status_code == 200 and response.json() != []:
+            user_id = response.json()[0]["id"]
 
-        channel_id = response.json()["id"]
+            # payload for json to generate a direct channel with post request
+            data = [bot_id, user_id]
+            # post request to generate the direct channel
+            response = requests.post(
+                f"{self.url}/api/v4/channels/direct",
+                headers=headers,
+                json=data,
+                timeout=5,
+            )
 
-        # payload for the json to generate the message
-        payload = {"channel_id": channel_id, "message": self.message}
+            channel_id = response.json()["id"]
 
-        # post request to send the message
-        requests.post(
-            f"{self.url}/api/v4/posts", headers=headers, json=payload, timeout=5
-        )
+            # payload for the json to generate the message
+            payload = {"channel_id": channel_id, "message": self.message}
+
+            # post request to send the message
+            requests.post(
+                f"{self.url}/api/v4/posts", headers=headers, json=payload, timeout=5
+            )
+        i += 1
 
 
 def send_message_with_bot_to_channel(self):
