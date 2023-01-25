@@ -33,7 +33,7 @@ _ 'message' = the message you want to send
             name="access_token",
             label="Access Token",
             description="The access token of the bot,"
-                        "which was given when the bot was created.",
+            "which was given when the bot was created.",
             default_value="Need to fill",
         ),
         PluginParameter(
@@ -46,7 +46,7 @@ _ 'message' = the message you want to send
             name="user",
             label="Username",
             description="The full name, username,"
-                        "nickname or email of the user you want to get the message.",
+            "nickname or email of the user you want to get the message.",
             default_value="Need to be filled for user message.",
         ),
         PluginParameter(
@@ -101,18 +101,15 @@ def send_message_with_bot_to_user(self):
         timeout=5,
     )
     i = 0
-    while i != len(response.json()) and (
-            response.json()[i]["username"] not in self.bot_name
-            and response.json()[i]["display_name"] not in self.bot_name
-    ):
-        i += 1
-    if i != len(response.json()) and (
+    bot_id = None
+    for _ in response.json():
+        if (
             response.json()[i]["username"] in self.bot_name
             or response.json()[i]["display_name"] in self.bot_name
-    ):
-        bot_id = response.json()[i]["user_id"]
-    else:
-        bot_id = ""
+        ):
+            bot_id = response.json()[i]["user_id"]
+        i += 1
+
     # Request to find the user ID with the username
     response = requests.post(
         f"{self.url}/api/v4/users/search",
@@ -160,18 +157,14 @@ def send_message_with_bot_to_channel(self):
         timeout=5,
     )
     i = 0
-    while i != len(response.json()) and (
-        response.json()[i]["display_name"] not in self.channel
-        and response.json()[i]["name"] not in self.channel
-    ):
+    channel_id = None
+    for _ in response.json():
+        if (
+            response.json()[i]["display_name"] in self.channel
+            or response.json()[i]["name"] in self.channel
+        ):
+            channel_id = response.json()[i]["id"]
         i += 1
-    if i != len(response.json()) and (
-        response.json()[i]["display_name"] in self.channel
-        or response.json()[i]["name"] in self.channel
-    ):
-        channel_id = response.json()[i]["id"]
-    else:
-        channel_id = ""
     # payload
     data = {"channel_id": channel_id, "message": self.message}
     # Post request for the message
