@@ -118,7 +118,7 @@ def send_message_with_bot_to_user(self):
         json={"term": self.user},
         timeout=5,
     )
-    if response.status_code == 200:
+    if response.status_code == 200 and response.json() != []:
         user_id = response.json()[0]["id"]
 
         # payload for json to generate a direct channel with post request
@@ -152,15 +152,16 @@ def send_message_with_bot_to_channel(self):
     # generate a channel_id
     response = requests.get(
         f"{self.url}/api/v4/channels",
-        headers={
-            "Authorization": f"Bearer {self.access_token}",
-        },
+        headers=headers,
         timeout=5,
     )
     i = 0
     channel_id = None
     for _ in response.json():
-        if self.channel in (response.json()[i]["display_name"], response.json()[i]["name"]):
+        if self.channel in (
+            response.json()[i]["display_name"],
+            response.json()[i]["name"],
+        ):
             channel_id = response.json()[i]["id"]
             break
         i += 1
