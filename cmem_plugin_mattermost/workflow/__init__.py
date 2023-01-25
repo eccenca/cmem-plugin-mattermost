@@ -103,11 +103,12 @@ def send_message_with_bot_to_user(self):
     i = 0
     bot_id = None
     for _ in response.json():
-        if (
-            response.json()[i]["username"] in self.bot_name
-            or response.json()[i]["display_name"] in self.bot_name
+        if self.bot_name in (
+            response.json()[i]["username"],
+            response.json()[i]["display_name"],
         ):
             bot_id = response.json()[i]["user_id"]
+            break
         i += 1
 
     # Request to find the user ID with the username
@@ -159,11 +160,9 @@ def send_message_with_bot_to_channel(self):
     i = 0
     channel_id = None
     for _ in response.json():
-        if (
-            response.json()[i]["display_name"] in self.channel
-            or response.json()[i]["name"] in self.channel
-        ):
+        if self.channel in (response.json()[i]["display_name"], response.json()[i]["name"]):
             channel_id = response.json()[i]["id"]
+            break
         i += 1
     # payload
     data = {"channel_id": channel_id, "message": self.message}
