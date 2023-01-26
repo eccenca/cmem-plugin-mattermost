@@ -91,10 +91,16 @@ class MattermostPlugin(WorkflowPlugin):
         self.channel = channel
         self.message = message
 
-
     def execute(self, inputs: Sequence[Entities], context: ExecutionContext) -> None:
-        self.send_message_with_bot_to_user()
-        self.send_message_with_bot_to_channel()
+        if self.user != "" and self.channel != "":
+            self.send_message_with_bot_to_channel()
+            self.send_message_with_bot_to_user()
+        elif self.channel == "" and self.user != "":
+            self.send_message_with_bot_to_user()
+        elif self.user == "" and self.channel != "":
+            self.send_message_with_bot_to_channel()
+        else:
+            ValueError("No input in user or channel.")
 
     def get_bot_id(self):
         """Request to find the bot ID with the bot name"""
@@ -135,6 +141,8 @@ class MattermostPlugin(WorkflowPlugin):
         user_id = []
         for _ in list_username:
             username = _.lstrip()
+            if username == "":
+                ValueError("No User")
             for _ in list_userentities:
                 if username in (
                     _["username"],
