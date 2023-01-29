@@ -100,20 +100,28 @@ class MattermostPlugin(WorkflowPlugin):
         for item in inputs:
             for entity in item.entities:
                 entities_counter += 1
+                i = 0
+                self.user = ""
+                self.channel = ""
+                self.message = ""
                 for _ in entity.values:
                     value_counter += 1
-                    self.user = _[0]
-                    self.channel = _[1]
-                    self.message = _[2]
-                    if self.user != "" and self.channel != "":
-                        self.send_message_with_bot_to_channel()
-                        self.send_message_with_bot_to_user()
-                    elif self.channel == "" and self.user != "":
-                        self.send_message_with_bot_to_user()
-                    elif self.user == "" and self.channel != "":
-                        self.send_message_with_bot_to_channel()
+                    i += 1
+                    if i == 1:
+                        self.user = _
+                    elif i == 2:
+                        self.channel = _
                     else:
-                        ValueError("No value in user or channel.")
+                        self.message = _
+                if self.user != "" and self.channel != "":
+                    self.send_message_with_bot_to_channel()
+                    self.send_message_with_bot_to_user()
+                elif self.channel == "" and self.user != "":
+                    self.send_message_with_bot_to_user()
+                elif self.user == "" and self.channel != "":
+                    self.send_message_with_bot_to_channel()
+                else:
+                    ValueError("No value in user or channel.")
         context.report.update(
             ExecutionReport(
                 entity_count=entities_counter,
