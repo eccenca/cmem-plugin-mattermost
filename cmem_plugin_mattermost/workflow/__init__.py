@@ -2,7 +2,7 @@
 from typing import Sequence
 
 import requests
-from cmem_plugin_base.dataintegration.context import ExecutionContext
+from cmem_plugin_base.dataintegration.context import ExecutionContext, ExecutionReport
 from cmem_plugin_base.dataintegration.description import Plugin, PluginParameter
 from cmem_plugin_base.dataintegration.entity import Entities
 from cmem_plugin_base.dataintegration.parameter.multiline import (
@@ -12,8 +12,10 @@ from cmem_plugin_base.dataintegration.plugins import WorkflowPlugin
 
 
 @Plugin(
-    label="automated messages (mattermost-integration)",
-    description="Sends automated messages in Mattermost channels or direct to users ",
+    label="Mattermost Plugin",
+    plugin_id="cmem_plugin_mattermost",
+    description="Sends automated messages in Mattermost"
+                " via bot to channels or direct to users ",
     documentation="""This Plugin sends messages via
     Mattermost bot/bots to channel or users.
 
@@ -23,11 +25,11 @@ the team, channel, user.
 
 - 'url' = URL for the Mattermost API
 - 'access_token' = The access token of the bot
-_ 'bot_name' = the bot name you want to post the message with
-_ 'user_name' = the username you want to get the message
-_ 'channel_name' = channel name you want to post the message in
-_ 'team_name' = the team name of the channel you want to post the message in
-_ 'message' = the message you want to send
+- 'bot_name' = the bot name you want to post the message with
+- 'user_name' = the username you want to get the message
+- 'channel_name' = channel name you want to post the message in
+- 'team_name' = the team name of the channel you want to post the message in
+- 'message' = the message you want to send
 """,
     parameters=[
         PluginParameter(
@@ -92,15 +94,37 @@ class MattermostPlugin(WorkflowPlugin):
         self.message = message
 
     def execute(self, inputs: Sequence[Entities], context: ExecutionContext) -> None:
-        if self.user != "" and self.channel != "":
-            self.send_message_with_bot_to_channel()
-            self.send_message_with_bot_to_user()
-        elif self.channel == "" and self.user != "":
-            self.send_message_with_bot_to_user()
-        elif self.user == "" and self.channel != "":
-            self.send_message_with_bot_to_channel()
-        else:
-            ValueError("No input in user or channel.")
+
+        entities_counter = 0
+        value_counter = 0
+        for item in inputs:
+            for entity in item.entities:
+                entities_counter += 1
+                for _ in entity.values:
+                    value_counter += 1
+                    self.user = _[0]
+                    self.channel = _[1]
+                    self.message = _[2]
+                    if self.user != "" and self.channel != "":
+                        self.send_message_with_bot_to_channel()
+                        self.send_message_with_bot_to_user()
+                    elif self.channel == "" and self.user != "":
+                        self.send_message_with_bot_to_user()
+                    elif self.user == "" and self.channel != "":
+                        self.send_message_with_bot_to_channel()
+                    else:
+                        ValueError("No value in user or channel.")
+        context.report.update(
+            ExecutionReport(
+                entity_count=entities_counter,
+                operation="wait",
+                operation_desc="entities received",
+                summary=[
+                    ("No. of entities", f"{entities_counter}"),
+                    ("No. of values", f"{value_counter}"),
+                ],
+            )
+        )
 
     def get_bot_id(self):
         """Request to find the bot ID with the bot name"""
@@ -127,7 +151,7 @@ class MattermostPlugin(WorkflowPlugin):
 
     def get_user_id_list(self) -> list:
         """Request to find the user ID with the username.
-            Returns a list of id`s not a string."""
+        Returns a list of id`s not a string."""
         headers = {
             "Authorization": f"Bearer {self.access_token}",
         }
@@ -142,7 +166,8 @@ class MattermostPlugin(WorkflowPlugin):
         for _ in list_username:
             username = _.lstrip()
             if username == "":
-                ValueError("No User")
+                ValueError("No User was insert.")
+                break
             for _ in list_userentities:
                 if username in (
                     _["username"],
