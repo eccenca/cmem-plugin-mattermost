@@ -94,6 +94,7 @@ class MattermostPlugin(WorkflowPlugin):
         self.message = message
 
     def execute(self, inputs: Sequence[Entities], context: ExecutionContext) -> None:
+        self.log.info("Mattermost Plugin Started")
 
         entities_counter = 0
         value_counter = 0
