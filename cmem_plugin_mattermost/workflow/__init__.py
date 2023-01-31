@@ -1,4 +1,5 @@
 """A Mattermost integration Plugin"""
+import json
 from typing import Sequence
 
 import requests
@@ -15,7 +16,7 @@ from cmem_plugin_base.dataintegration.plugins import WorkflowPlugin
     label="Mattermost Plugin",
     plugin_id="cmem_plugin_mattermost",
     description="Sends automated messages in Mattermost"
-                " via bot to channels or direct to users ",
+    " via bot to channels or direct to users ",
     documentation="""This Plugin sends messages via
     Mattermost bot/bots to channel or users.
 
@@ -101,18 +102,16 @@ class MattermostPlugin(WorkflowPlugin):
         for item in inputs:
             for entity in item.entities:
                 entities_counter += 1
-                i = 0
                 self.user = ""
                 self.channel = ""
                 self.message = ""
                 for _ in entity.values:
                     value_counter += 1
-                    i += 1
-                    if i == 1:
+                    if item.schema.type_uri == "user":
                         self.user = _
-                    elif i == 2:
+                    elif item.schema.type_uri == "channel":
                         self.channel = _
-                    else:
+                    elif item.schema.type_uri == "message":
                         self.message = _
                 if self.user != "" and self.channel != "":
                     self.send_message_with_bot_to_channel()
@@ -143,7 +142,7 @@ class MattermostPlugin(WorkflowPlugin):
         response = requests.get(
             f"{self.url}/api/v4/bots",
             headers=headers,
-            json={"per_page": 1},
+            data="",
             timeout=5,
         )
 
@@ -167,6 +166,7 @@ class MattermostPlugin(WorkflowPlugin):
         response = requests.get(
             f"{self.url}/api/v4/users?per_page=200",
             headers=headers,
+            data="",
             timeout=20,
         )
         list_userentities = response.json()
@@ -201,7 +201,7 @@ class MattermostPlugin(WorkflowPlugin):
             response = requests.post(
                 f"{self.url}/api/v4/channels/direct",
                 headers=headers,
-                json=data,
+                data=data,
                 timeout=5,
             )
 
@@ -212,7 +212,10 @@ class MattermostPlugin(WorkflowPlugin):
 
             # post request to send the message
             requests.post(
-                f"{self.url}/api/v4/posts", headers=headers, json=payload, timeout=5
+                f"{self.url}/api/v4/posts",
+                headers=headers,
+                data=json.dumps(payload),
+                timeout=5,
             )
 
     def get_channel_id(self):
@@ -225,6 +228,7 @@ class MattermostPlugin(WorkflowPlugin):
         response = requests.get(
             f"{self.url}/api/v4/channels",
             headers=headers,
+            data="",
             timeout=5,
         )
         list_channel = response.json()
@@ -247,4 +251,9 @@ class MattermostPlugin(WorkflowPlugin):
         # payload
         data = {"channel_id": channel_id, "message": self.message}
         # Post request for the message
-        requests.post(f"{self.url}/api/v4/posts", headers=headers, json=data, timeout=5)
+        requests.post(
+            f"{self.url}/api/v4/posts",
+            headers=headers,
+            data=json.dumps(data),
+            timeout=5,
+        )
