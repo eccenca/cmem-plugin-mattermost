@@ -121,7 +121,8 @@ class MattermostPlugin(WorkflowPlugin):
                 elif self.user == "" and self.channel != "":
                     self.send_message_with_bot_to_channel()
                 else:
-                    ValueError("No value in user or channel.")
+                    self.send_message_with_bot_to_channel()
+                    self.send_message_with_bot_to_user()
         context.report.update(
             ExecutionReport(
                 entity_count=entities_counter,
