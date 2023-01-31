@@ -123,6 +123,7 @@ class MattermostPlugin(WorkflowPlugin):
                 else:
                     self.send_message_with_bot_to_channel()
                     self.send_message_with_bot_to_user()
+
         context.report.update(
             ExecutionReport(
                 entity_count=entities_counter,
@@ -202,7 +203,7 @@ class MattermostPlugin(WorkflowPlugin):
             response = requests.post(
                 f"{self.url}/api/v4/channels/direct",
                 headers=headers,
-                data=data,
+                data=json.dumps(data),
                 timeout=5,
             )
 
