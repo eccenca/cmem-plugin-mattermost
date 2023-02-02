@@ -1,5 +1,4 @@
 """A Mattermost integration Plugin"""
-import json
 from typing import Sequence
 
 import requests
@@ -94,25 +93,32 @@ class MattermostPlugin(WorkflowPlugin):
         self.channel = channel
         self.message = message
 
-    def execute(self, inputs: Sequence[Entities], context: ExecutionContext) -> None:
+    def execute(self, inputs: Sequence[Entities], context: ExecutionContext):
         self.log.info("Mattermost Plugin Started")
-
         entities_counter = 0
         value_counter = 0
         for item in inputs:
+            columns = [ep.path for ep in item.schema.paths]
             for entity in item.entities:
                 entities_counter += 1
                 self.user = ""
                 self.channel = ""
                 self.message = ""
-                for _ in entity.values:
+                i = 0
+                for column in columns:
+                    if len(entity.values[i]) > 0:
+                        param_value = entity.values[i][0]
+                    else:
+                        param_value = ""
+
+                    if column == "user":
+                        self.user = param_value
+                    elif column == "channel":
+                        self.channel = param_value
+                    elif column == "message":
+                        self.message = param_value
+                    i += 1
                     value_counter += 1
-                    if item.schema.type_uri == "user":
-                        self.user = _
-                    elif item.schema.type_uri == "channel":
-                        self.channel = _
-                    elif item.schema.type_uri == "message":
-                        self.message = _
                 if self.user != "" and self.channel != "":
                     self.send_message_with_bot_to_channel()
                     self.send_message_with_bot_to_user()
@@ -120,9 +126,6 @@ class MattermostPlugin(WorkflowPlugin):
                     self.send_message_with_bot_to_user()
                 elif self.user == "" and self.channel != "":
                     self.send_message_with_bot_to_channel()
-                else:
-                    self.send_message_with_bot_to_channel()
-                    self.send_message_with_bot_to_user()
 
         context.report.update(
             ExecutionReport(
@@ -140,11 +143,11 @@ class MattermostPlugin(WorkflowPlugin):
         """Request to find the bot ID with the bot name"""
         headers = {
             "Authorization": f"Bearer {self.access_token}",
+            "Content-Type": "application/json",
         }
         response = requests.get(
             f"{self.url}/api/v4/bots",
             headers=headers,
-            data="",
             timeout=5,
         )
 
@@ -159,16 +162,16 @@ class MattermostPlugin(WorkflowPlugin):
                 break
         return bot_id
 
-    def get_user_id_list(self) -> list:
+    def get_user_id_list(self):
         """Request to find the user ID with the username.
         Returns a list of id`s not a string."""
         headers = {
             "Authorization": f"Bearer {self.access_token}",
+            "Content-Type": "application/json",
         }
         response = requests.get(
             f"{self.url}/api/v4/users?per_page=200",
             headers=headers,
-            data="",
             timeout=20,
         )
         list_userentities = response.json()
@@ -189,10 +192,11 @@ class MattermostPlugin(WorkflowPlugin):
                     user_id.append(_["id"])
         return user_id
 
-    def send_message_with_bot_to_user(self) -> None:
+    def send_message_with_bot_to_user(self):
         """sends messages from bot to one or more users."""
         headers = {
             "Authorization": f"Bearer {self.access_token}",
+            "Content-Type": "application/json",
         }
         list_user_id = self.get_user_id_list()
         bot_id = self.get_bot_id()
@@ -203,7 +207,7 @@ class MattermostPlugin(WorkflowPlugin):
             response = requests.post(
                 f"{self.url}/api/v4/channels/direct",
                 headers=headers,
-                data=json.dumps(data),
+                json=data,
                 timeout=5,
             )
 
@@ -216,7 +220,7 @@ class MattermostPlugin(WorkflowPlugin):
             requests.post(
                 f"{self.url}/api/v4/posts",
                 headers=headers,
-                data=json.dumps(payload),
+                json=payload,
                 timeout=5,
             )
 
@@ -224,13 +228,13 @@ class MattermostPlugin(WorkflowPlugin):
         """Request to find the channel ID with the bot name"""
         headers = {
             "Authorization": f"Bearer {self.access_token}",
+            "Content-Type": "application/json",
         }
 
         # generate a channel_id
         response = requests.get(
             f"{self.url}/api/v4/channels",
             headers=headers,
-            data="",
             timeout=5,
         )
         list_channel = response.json()
@@ -244,18 +248,18 @@ class MattermostPlugin(WorkflowPlugin):
                 break
         return channel_id
 
-    def send_message_with_bot_to_channel(self) -> None:
+    def send_message_with_bot_to_channel(self):
         """sends messages from bot to channel."""
         headers = {
             "Authorization": f"Bearer {self.access_token}",
+            "Content-Type": "application/json",
         }
         channel_id = self.get_channel_id()
-        # payload
-        data = {"channel_id": channel_id, "message": self.message}
+
         # Post request for the message
         requests.post(
             f"{self.url}/api/v4/posts",
             headers=headers,
-            data=json.dumps(data),
+            json={"channel_id": channel_id, "message": self.message},
             timeout=5,
         )
