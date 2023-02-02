@@ -75,7 +75,7 @@ the team, channel, user.
 class MattermostPlugin(WorkflowPlugin):
     """A Mattermost integration Plugin with static messaging"""
 
-    # pylint: disable=R0913
+    # pylint: disable=R0913, R0912
     def __init__(
         self,
         url: str,
@@ -95,6 +95,14 @@ class MattermostPlugin(WorkflowPlugin):
 
     def execute(self, inputs: Sequence[Entities], context: ExecutionContext):
         self.log.info("Mattermost Plugin Started")
+        if self.user != "" and self.channel != "":
+            self.send_message_with_bot_to_channel()
+            self.send_message_with_bot_to_user()
+        elif self.channel == "" and self.user != "":
+            self.send_message_with_bot_to_user()
+        elif self.user == "" and self.channel != "":
+            self.send_message_with_bot_to_channel()
+
         entities_counter = 0
         value_counter = 0
         for item in inputs:
