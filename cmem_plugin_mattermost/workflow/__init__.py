@@ -92,7 +92,7 @@ class MattermostPlugin(WorkflowPlugin):
         self.channel = channel
         self.message = message
 
-    def execute(self, inputs: Sequence[Entities], context: ExecutionContext):
+    def execute(self, inputs: Sequence[Entities], context: ExecutionContext) -> None:
         self.log.info("Mattermost Plugin Started")
         # fix message with every start, could used at creating of the workflow item
         self.test_between_user_or_channel_message()
@@ -192,7 +192,7 @@ class MattermostPlugin(WorkflowPlugin):
                     user_id.append(_["id"])
         return user_id
 
-    def send_message_with_bot_to_user(self):
+    def send_message_with_bot_to_user(self) -> None:
         """sends messages from bot to one or more users."""
         list_user_id = self.get_user_id_list()
         bot_id = self.get_bot_id()
@@ -239,15 +239,16 @@ class MattermostPlugin(WorkflowPlugin):
                 break
         return channel_id
 
-    def send_message_with_bot_to_channel(self):
+    def send_message_with_bot_to_channel(self) -> None:
         """sends messages from bot to channel."""
         channel_id = self.get_channel_id()
-
+        # payload for the json to generate the message
+        payload = {"channel_id": channel_id, "message": self.message}
         # Post request for the message
         requests.post(
             f"{self.url}/api/v4/posts",
             headers=self.header(),
-            json={"channel_id": channel_id, "message": self.message},
+            json=payload,
             timeout=5,
         )
 
