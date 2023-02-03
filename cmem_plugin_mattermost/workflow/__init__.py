@@ -169,20 +169,28 @@ class MattermostPlugin(WorkflowPlugin):
     def get_user_id_list(self):
         """Request to find the user ID with the username.
         Returns a list of id`s not a string."""
-        response = requests.get(
-            f"{self.url}/api/v4/users?per_page=200",
-            headers=self.header(),
-            timeout=20,
-        )
-        list_userentities = response.json()
-        list_username = self.user.split(sep=";")
+        i = 0
+        user_data_list = []
+        while i >= 0:
+            response = requests.get(
+                f"{self.url}/api/v4/users?page={i}&per_page=200",
+                headers=self.header(),
+                timeout=20,
+            )
+            i += 1
+            list_userentities = response.json()
+            if list_userentities:
+                user_data_list.extend(list_userentities)
+            else:
+                i = -1
+        list_usernames_provided = self.user.split(sep=";")
         user_id = []
-        for _ in list_username:
+        for _ in list_usernames_provided:
             username = _.lstrip()
             if username == "":
-                ValueError("No User was insert.")
+                ValueError("No User was provided.")
                 break
-            for _ in list_userentities:
+            for _ in user_data_list:
                 if username in (
                     _["username"],
                     _["email"],
