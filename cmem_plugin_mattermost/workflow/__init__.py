@@ -28,7 +28,6 @@ the team, channel, user.
 - 'bot_name' = the bot name you want to post the message with
 - 'user_name' = the username you want to get the message
 - 'channel_name' = channel name you want to post the message in
-- 'team_name' = the team name of the channel you want to post the message in
 - 'message' = the message you want to send
 """,
     parameters=[
@@ -95,45 +94,38 @@ class MattermostPlugin(WorkflowPlugin):
 
     def execute(self, inputs: Sequence[Entities], context: ExecutionContext):
         self.log.info("Mattermost Plugin Started")
-        if self.user != "" and self.channel != "":
-            self.send_message_with_bot_to_channel()
-            self.send_message_with_bot_to_user()
-        elif self.channel == "" and self.user != "":
-            self.send_message_with_bot_to_user()
-        elif self.user == "" and self.channel != "":
-            self.send_message_with_bot_to_channel()
+        # fix message with every start, could used at creating of the workflow item
+        self.test_between_user_or_channel_message()
 
         entities_counter = 0
         value_counter = 0
+        # Entity/ies
         for item in inputs:
-            columns = [ep.path for ep in item.schema.paths]
+            column_names = [ep.path for ep in item.schema.paths]
+            # columns of given Entity
             for entity in item.entities:
                 entities_counter += 1
                 self.user = ""
                 self.channel = ""
                 self.message = ""
                 i = 0
-                for column in columns:
+                # row of given Entity
+                for column_name in column_names:
                     if len(entity.values[i]) > 0:
                         param_value = entity.values[i][0]
                     else:
                         param_value = ""
 
-                    if column == "user":
+                    if column_name == "user":
                         self.user = param_value
-                    elif column == "channel":
+                    elif column_name == "channel":
                         self.channel = param_value
-                    elif column == "message":
+                    elif column_name == "message":
                         self.message = param_value
                     i += 1
                     value_counter += 1
-                if self.user != "" and self.channel != "":
-                    self.send_message_with_bot_to_channel()
-                    self.send_message_with_bot_to_user()
-                elif self.channel == "" and self.user != "":
-                    self.send_message_with_bot_to_user()
-                elif self.user == "" and self.channel != "":
-                    self.send_message_with_bot_to_channel()
+
+                self.test_between_user_or_channel_message()
 
         context.report.update(
             ExecutionReport(
@@ -147,18 +139,22 @@ class MattermostPlugin(WorkflowPlugin):
             )
         )
 
-    def get_bot_id(self):
-        """Request to find the bot ID with the bot name"""
-        headers = {
+    def header(self):
+        """Request Header"""
+        header = {
             "Authorization": f"Bearer {self.access_token}",
             "Content-Type": "application/json",
         }
+        return header
+
+    def get_bot_id(self):
+        """Request to find the bot ID with the bot name"""
+
         response = requests.get(
             f"{self.url}/api/v4/bots",
-            headers=headers,
+            headers=self.header(),
             timeout=5,
         )
-
         bot_id = str
         list_bot_entities = response.json()
         for _ in list_bot_entities:
@@ -173,13 +169,9 @@ class MattermostPlugin(WorkflowPlugin):
     def get_user_id_list(self):
         """Request to find the user ID with the username.
         Returns a list of id`s not a string."""
-        headers = {
-            "Authorization": f"Bearer {self.access_token}",
-            "Content-Type": "application/json",
-        }
         response = requests.get(
             f"{self.url}/api/v4/users?per_page=200",
-            headers=headers,
+            headers=self.header(),
             timeout=20,
         )
         list_userentities = response.json()
@@ -202,10 +194,6 @@ class MattermostPlugin(WorkflowPlugin):
 
     def send_message_with_bot_to_user(self):
         """sends messages from bot to one or more users."""
-        headers = {
-            "Authorization": f"Bearer {self.access_token}",
-            "Content-Type": "application/json",
-        }
         list_user_id = self.get_user_id_list()
         bot_id = self.get_bot_id()
         for _ in list_user_id:
@@ -214,7 +202,7 @@ class MattermostPlugin(WorkflowPlugin):
             # post request to generate the direct channel
             response = requests.post(
                 f"{self.url}/api/v4/channels/direct",
-                headers=headers,
+                headers=self.header(),
                 json=data,
                 timeout=5,
             )
@@ -227,22 +215,17 @@ class MattermostPlugin(WorkflowPlugin):
             # post request to send the message
             requests.post(
                 f"{self.url}/api/v4/posts",
-                headers=headers,
+                headers=self.header(),
                 json=payload,
                 timeout=5,
             )
 
     def get_channel_id(self):
         """Request to find the channel ID with the bot name"""
-        headers = {
-            "Authorization": f"Bearer {self.access_token}",
-            "Content-Type": "application/json",
-        }
-
         # generate a channel_id
         response = requests.get(
             f"{self.url}/api/v4/channels",
-            headers=headers,
+            headers=self.header(),
             timeout=5,
         )
         list_channel = response.json()
@@ -258,16 +241,24 @@ class MattermostPlugin(WorkflowPlugin):
 
     def send_message_with_bot_to_channel(self):
         """sends messages from bot to channel."""
-        headers = {
-            "Authorization": f"Bearer {self.access_token}",
-            "Content-Type": "application/json",
-        }
         channel_id = self.get_channel_id()
 
         # Post request for the message
         requests.post(
             f"{self.url}/api/v4/posts",
-            headers=headers,
+            headers=self.header(),
             json={"channel_id": channel_id, "message": self.message},
             timeout=5,
         )
+
+    def test_between_user_or_channel_message(self) -> None:
+        """will test if the message is sending to user or channel or both"""
+        if self.user != "" and self.channel != "":
+            self.send_message_with_bot_to_channel()
+            self.send_message_with_bot_to_user()
+        elif self.channel == "" and self.user != "":
+            self.send_message_with_bot_to_user()
+        elif self.user == "" and self.channel != "":
+            self.send_message_with_bot_to_channel()
+        else:
+            ValueError("No user or channel are provided.")
