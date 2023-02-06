@@ -188,8 +188,7 @@ class MattermostPlugin(WorkflowPlugin):
         for _ in list_usernames_provided:
             username = _.lstrip()
             if username == "":
-                ValueError("No User was provided.")
-                break
+                raise ValueError("No User was provided.")
             for _ in user_data_list:
                 if username in (
                     _["username"],
@@ -270,4 +269,4 @@ class MattermostPlugin(WorkflowPlugin):
         elif self.user == "" and self.channel != "":
             self.send_message_with_bot_to_channel()
         else:
-            ValueError("No user or channel are provided.")
+            raise ValueError("No user or channel are provided.")
