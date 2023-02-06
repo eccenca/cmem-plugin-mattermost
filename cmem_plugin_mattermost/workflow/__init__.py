@@ -74,7 +74,7 @@ the team, channel, user.
 class MattermostPlugin(WorkflowPlugin):
     """A Mattermost integration Plugin with static messaging"""
 
-    # pylint: disable=R0913, R0912
+    # pylint: disable=R0913
     def __init__(
         self,
         url: str,
@@ -92,11 +92,14 @@ class MattermostPlugin(WorkflowPlugin):
         self.channel = channel
         self.message = message
 
+        # TODO: Add pre-validation for variables
+
     def execute(self, inputs: Sequence[Entities], context: ExecutionContext) -> None:
         self.log.info("Mattermost Plugin Started")
         # fix message with every start, could used at creating of the workflow item
         self.test_between_user_or_channel_message()
 
+        # TODO: Refactor code
         entities_counter = 0
         value_counter = 0
         # Entity/ies
@@ -155,8 +158,10 @@ class MattermostPlugin(WorkflowPlugin):
             headers=self.header(),
             timeout=5,
         )
+        # TODO: Error handling on request failure
         bot_id = str
         list_bot_entities = response.json()
+        # TODO: Raise exception when bot not found with the specified name
         for _ in list_bot_entities:
             if self.bot_name in (
                 _["username"],
@@ -171,6 +176,9 @@ class MattermostPlugin(WorkflowPlugin):
         Returns a list of id`s not a string."""
         i = 0
         user_data_list = []
+        # FIXME: Here variable i is not used anywhere
+        # same functionality can be achieved with while True and
+        # use break when conditions met.
         while i >= 0:
             response = requests.get(
                 f"{self.url}/api/v4/users?page={i}&per_page=200",
@@ -183,6 +191,7 @@ class MattermostPlugin(WorkflowPlugin):
                 user_data_list.extend(list_userentities)
             else:
                 i = -1
+        # TODO: why not comma - its more user friendly
         list_usernames_provided = self.user.split(sep=";")
         user_id = []
         for _ in list_usernames_provided:
@@ -216,6 +225,7 @@ class MattermostPlugin(WorkflowPlugin):
 
             channel_id = response.json()["id"]
 
+            # TODO: can be abstracted into a new function send message
             # payload for the json to generate the message
             payload = {"channel_id": channel_id, "message": self.message}
 
@@ -268,5 +278,6 @@ class MattermostPlugin(WorkflowPlugin):
             self.send_message_with_bot_to_user()
         elif self.user == "" and self.channel != "":
             self.send_message_with_bot_to_channel()
+        # TODO: Can be removed, handle empty username, channel name on project init
         else:
             raise ValueError("No user or channel are provided.")
