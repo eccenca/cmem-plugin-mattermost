@@ -185,18 +185,15 @@ class MattermostPlugin(WorkflowPlugin):
         """Request to find the bot ID with the bot name"""
         response = self.get_request_handler("bots")
         bot_id = str
+        bot_name = self.bot_name
         list_bot_entities = response.json()
         for _ in list_bot_entities:
-            if self.bot_name in (
+            if bot_name in (
                 _["username"],
-                _["display_name"],
+                _["display_name"]
             ):
                 bot_id = _["user_id"]
-            else:
-                bot_id = ""
-        if bot_id != "":
-            return bot_id
-        return None
+        return bot_id
 
     def get_user_id_list(self):
         """Request to find the user ID with the username.
@@ -227,7 +224,7 @@ class MattermostPlugin(WorkflowPlugin):
                     user_id.append(_["id"])
         return user_id
 
-    def send_message_with_bot_to_user(self) -> None:
+    def send_message_with_bot_to_user(self):
         """sends messages from bot to one or more users."""
         list_user_id = self.get_user_id_list()
         bot_id = self.get_bot_id()
@@ -249,17 +246,15 @@ class MattermostPlugin(WorkflowPlugin):
         response = self.get_request_handler("channels")
         list_channel = response.json()
         channel_id = str
+        channel_name = self.channel
         for _ in list_channel:
-            if self.channel in (
-                _["display_name"],
+            if channel_name in (
                 _["name"],
+                _["display_name"]
+
             ):
                 channel_id = _["id"]
-            else:
-                channel_id = ""
-        if channel_id != "":
-            return channel_id
-        return None
+        return channel_id
 
     def send_message_with_bot_to_channel(self) -> None:
         """sends messages from bot to channel."""
