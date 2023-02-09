@@ -10,3 +10,4 @@ Create awesome Knowledge Graphs with eccenca Corporate Memory :-)
 - Use [pre-commit](https://pre-commit.com/) to avoid errors before commit.
 - This repository was created with [this copier template](https://github.com/eccenca/cmem-plugin-template).
 
+Access-token:plugin-test : ah85ckhk6ib6zqqjh7i7j16hra
