@@ -100,7 +100,7 @@ class MattermostPlugin(WorkflowPlugin):
         if self.user == "" and self.channel == "" and not inputs:
             raise ValueError("No Inputs or Static Message.")
         if self.user != "" or self.channel != "":
-            self.test_between_user_or_channel_message()
+            self.check_between_user_or_channel_message()
         if inputs:
             entities_counter = 0
             value_counter = 0
@@ -130,7 +130,7 @@ class MattermostPlugin(WorkflowPlugin):
                         i += 1
                         value_counter += 1
 
-                    self.test_between_user_or_channel_message()
+                    self.check_between_user_or_channel_message()
 
             context.report.update(
                 ExecutionReport(
@@ -285,7 +285,7 @@ class MattermostPlugin(WorkflowPlugin):
         # Post request for the message
         self.post_request_handler("posts", payload)
 
-    def test_between_user_or_channel_message(self) -> None:
+    def check_between_user_or_channel_message(self) -> None:
         """will test if the message is sending to user or channel or both"""
         if self.user != "" and self.channel != "":
             if self.get_user_id_list() != ValueError:
