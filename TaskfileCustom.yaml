@@ -1,0 +1,29 @@
+# https://taskfile.dev
+---
+version: '3'
+
+tasks:
+
+  mattermost:start:
+    desc: Start or restart the mattermost orchestration
+    cmds:
+      - >
+        docker-compose -f docker/docker-compose.yml up
+        --no-color
+
+  mattermost:stop:
+    desc: Stop the mattermost orchestration
+    cmds:
+      - docker-compose -f docker/docker-compose.yml stop
+      - docker-compose -f docker/docker-compose.yml rm -f
+
+  mattermost:db:dump:
+    desc: Dump the mattermost database to volume/db.sql
+    cmds:
+      - docker exec -i -t docker_mattermost_1 /volume/dump.sh
+
+  mattermost:db:load:
+    desc: Load the mattermost database from volume/db.sql
+    cmds:
+      - docker exec -i -t docker_mattermost_1 /volume/load.sh
+
