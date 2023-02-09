@@ -184,16 +184,18 @@ class MattermostPlugin(WorkflowPlugin):
     def get_bot_id(self):
         """Request to find the bot ID with the bot name"""
         response = self.get_request_handler("bots")
-        bot_id = str
+        bot_id = ""
         bot_name = self.bot_name
         list_bot_entities = response.json()
         for _ in list_bot_entities:
             if bot_name in (
                 _["username"],
-                _["display_name"]
+                _["display_name"],
             ):
                 bot_id = _["user_id"]
-        return bot_id
+        if bot_id != "":
+            return bot_id
+        raise ValueError("Bot ID not found, check bot_name parameter.")
 
     def get_user_id_list(self):
         """Request to find the user ID with the username.
@@ -209,20 +211,38 @@ class MattermostPlugin(WorkflowPlugin):
             else:
                 break
         list_usernames_provided = self.user.split(sep=",")
-        user_id = []
+        list_user_id = []
+        list_usernames_for_error = []
         for _ in list_usernames_provided:
-            username = _.lstrip()
+            username = _.lstrip().lower()
             if username == "":
-                raise ValueError("No User was provided.")
+                raise ValueError("No user name was provided or "
+                                 "useless comma at the end.")
+            list_usernames_for_error.append(username)
             for _ in user_data_list:
                 if username in (
-                    _["username"],
-                    _["email"],
-                    _["nickname"],
-                    (_["first_name"] + " " + _["last_name"]),
+                    _["username"].lower(),
+                    _["email"].lower(),
+                    _["nickname"].lower(),
+                    (_["first_name"].lower() + " "
+                     + _["last_name"].lower()),
                 ):
-                    user_id.append(_["id"])
-        return user_id
+                    list_user_id.append(_["id"])
+        if len(list_usernames_provided) == len(list_user_id):
+            return list_user_id
+        list_user_exist = []
+        for user_id in list_user_id:
+            for _ in user_data_list:
+                if user_id == _["id"]:
+                    list_user_exist.extend([_["username"].lower(),
+                                            _["email"].lower(),
+                                            _["nickname"].lower(),
+                                            (_["first_name"].lower() + " "
+                                            + _["last_name"].lower())
+                                            ])
+        list_diff = [elem for elem in list_usernames_for_error if
+                     elem not in list_user_exist]
+        raise ValueError(f"User {', '.join(list_diff)} do not exist.")
 
     def send_message_with_bot_to_user(self):
         """sends messages from bot to one or more users."""
@@ -236,7 +256,6 @@ class MattermostPlugin(WorkflowPlugin):
             channel_id = response.json()["id"]
             # payload for the json to generate the message
             payload = {"channel_id": channel_id, "message": self.message}
-
             # post request to send the message
             self.post_request_handler("posts", payload)
 
@@ -245,16 +264,18 @@ class MattermostPlugin(WorkflowPlugin):
         # generate a channel_id
         response = self.get_request_handler("channels")
         list_channel = response.json()
-        channel_id = str
+        channel_id = ""
         channel_name = self.channel
         for _ in list_channel:
             if channel_name in (
                 _["name"],
-                _["display_name"]
+                _["display_name"],
 
             ):
                 channel_id = _["id"]
-        return channel_id
+        if channel_id != "":
+            return channel_id
+        raise ValueError("Channel ID not found, check channel parameter.")
 
     def send_message_with_bot_to_channel(self) -> None:
         """sends messages from bot to channel."""
@@ -267,7 +288,8 @@ class MattermostPlugin(WorkflowPlugin):
     def test_between_user_or_channel_message(self) -> None:
         """will test if the message is sending to user or channel or both"""
         if self.user != "" and self.channel != "":
-            self.send_message_with_bot_to_channel()
+            if self.get_user_id_list() != ValueError:
+                self.send_message_with_bot_to_channel()
             self.send_message_with_bot_to_user()
         elif self.channel == "" and self.user != "":
             self.send_message_with_bot_to_user()
