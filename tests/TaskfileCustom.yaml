@@ -10,7 +10,7 @@ tasks:
       - >
         docker run --name mattermost-preview -d 
         --publish 8065:8065 mattermost/mattermost-preview
-  kafka:stop:
+  mattermost:stop:
     desc: Stop the mattermost orchestration
     cmds:
       - docker-compose -f docker/docker-compose.yml stop
