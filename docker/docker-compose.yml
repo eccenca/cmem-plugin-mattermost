@@ -8,4 +8,6 @@ services:
       - '8065:8065'
     volumes:
       - "./volume:/volume"
+    entrypoint:
+      - "/volume/docker-entry.sh"
 
