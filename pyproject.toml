@@ -71,5 +71,5 @@ warn_return_any = true
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
-addopts = "--use-running-containers --docker-compose=./docker/docker-compose.yml"
+addopts = "--docker-compose-no-build --use-running-containers --docker-compose=./docker/docker-compose.yml"
 
