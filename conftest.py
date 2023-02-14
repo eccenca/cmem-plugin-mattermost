@@ -5,8 +5,8 @@ from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
 
-@pytest.fixture(name="homepage")
-def fixture_homepage(session_scoped_container_getter) -> str:
+@pytest.fixture
+def mattermost_service(session_scoped_container_getter) -> str:
     """Wait for the api from mattermost to become responsive"""
     service = session_scoped_container_getter.get("mattermost").network_info[0]
 
