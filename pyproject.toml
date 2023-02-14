@@ -70,5 +70,5 @@ warn_return_any = true
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
-addopts = "--docker-compose=./docker/docker-compose.yml"
+addopts = ""
 
