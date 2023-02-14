@@ -6,9 +6,9 @@ from urllib3.util.retry import Retry
 
 
 @pytest.fixture
-def mattermost_service(session_scoped_container_getter) -> str:
+def mattermost_service(module_scoped_container_getter) -> str:
     """Wait for the api from mattermost to become responsive"""
-    service = session_scoped_container_getter.get("mattermost").network_info[0]
+    service = module_scoped_container_getter.get("mattermost").network_info[0]
 
     base_url = f"http://{service.hostname}:{service.host_port}"
 
