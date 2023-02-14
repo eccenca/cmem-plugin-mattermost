@@ -9,5 +9,6 @@ services:
     volumes:
       - "./volume:/volume"
     entrypoint:
+      - "/bin/bash"
       - "/volume/docker-entry.sh"
 
