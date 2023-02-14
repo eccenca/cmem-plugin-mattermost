@@ -2,7 +2,7 @@
 
 Create awesome Knowledge Graphs with eccenca Corporate Memory :-)
 
-[![eccenca Corporate Memory](https://img.shields.io/badge/eccenca-Corporate%20Memory-orange)](https://documentation.eccenca.com)  [![pypi version](https://img.shields.io/pypi/v/cmem-plugin-mattermost)](https://pypi.org/project/mattermost) [![license](https://img.shields.io/pypi/l/mattermost)](https://pypi.org/project/mattermost)
+[![eccenca Corporate Memory](https://img.shields.io/badge/eccenca-Corporate%20Memory-orange)](https://documentation.eccenca.com)   
 
 ## Development
 
