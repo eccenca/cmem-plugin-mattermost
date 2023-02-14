@@ -12,7 +12,7 @@ def mattermost_service(session_scoped_container_getter) -> str:
 
     base_url = f"http://{service.hostname}:{service.host_port}"
 
-    retry = Retry(total=5, backoff_factor=30, status_forcelist=[500, 502, 503, 504])
+    retry = Retry(total=5, backoff_factor=3, status_forcelist=[500, 502, 503, 504])
     session = Session()
     session.mount("http://", HTTPAdapter(max_retries=retry))
 
