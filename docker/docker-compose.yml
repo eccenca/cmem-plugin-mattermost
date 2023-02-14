@@ -11,4 +11,3 @@ services:
     entrypoint:
       - "/bin/bash"
       - "/volume/docker-entry.sh"
-
