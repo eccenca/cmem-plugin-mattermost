@@ -60,7 +60,7 @@ the team, channel, user.
             name="channel",
             label="Channel name",
             description="The name or display name of the channel"
-                        " you want to get the message.",
+            " you want to get the message.",
             default_value="",
         ),
         PluginParameter(
@@ -216,16 +216,16 @@ class MattermostPlugin(WorkflowPlugin):
         for _ in list_usernames_provided:
             username = _.lstrip().lower()
             if username == "":
-                raise ValueError("No user name was provided or "
-                                 "useless comma at the end.")
+                raise ValueError(
+                    "No user name was provided or useless comma at the end."
+                )
             list_usernames_for_error.append(username)
             for _ in user_data_list:
                 if username in (
                     _["username"].lower(),
                     _["email"].lower(),
                     _["nickname"].lower(),
-                    (_["first_name"].lower() + " "
-                     + _["last_name"].lower()),
+                    (_["first_name"].lower() + " " + _["last_name"].lower()),
                 ):
                     list_user_id.append(_["id"])
         if len(list_usernames_provided) == len(list_user_id):
@@ -234,14 +234,17 @@ class MattermostPlugin(WorkflowPlugin):
         for user_id in list_user_id:
             for _ in user_data_list:
                 if user_id == _["id"]:
-                    list_user_exist.extend([_["username"].lower(),
-                                            _["email"].lower(),
-                                            _["nickname"].lower(),
-                                            (_["first_name"].lower() + " "
-                                            + _["last_name"].lower())
-                                            ])
-        list_diff = [elem for elem in list_usernames_for_error if
-                     elem not in list_user_exist]
+                    list_user_exist.extend(
+                        [
+                            _["username"].lower(),
+                            _["email"].lower(),
+                            _["nickname"].lower(),
+                            (_["first_name"].lower() + " " + _["last_name"].lower()),
+                        ]
+                    )
+        list_diff = [
+            elem for elem in list_usernames_for_error if elem not in list_user_exist
+        ]
         raise ValueError(f"User {', '.join(list_diff)} do not exist.")
 
     def send_message_with_bot_to_user(self):
@@ -270,7 +273,6 @@ class MattermostPlugin(WorkflowPlugin):
             if channel_name in (
                 _["name"],
                 _["display_name"],
-
             ):
                 channel_id = _["id"]
         if channel_id != "":
