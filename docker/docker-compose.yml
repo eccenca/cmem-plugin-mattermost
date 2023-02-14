@@ -7,7 +7,7 @@ services:
     ports:
       - '8065:8065'
     volumes:
-      - "./volume1:/volume1"
+      - "./volume:/volume"
     entrypoint:
-      - "/volume1/docker-entry.sh"
+      - "/volume/docker-entry.sh"
 

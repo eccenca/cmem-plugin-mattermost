@@ -18,12 +18,12 @@ tasks:
       - docker-compose -f docker/docker-compose.yml rm -f
 
   mattermost:db:dump:
-    desc: Dump the mattermost database to volume1/db.sql
+    desc: Dump the mattermost database to volume/db.sql
     cmds:
-      - docker exec -i -t docker_mattermost_1 /volume1/dump.sh
+      - docker exec -i -t docker_mattermost_1 /volume/dump.sh
 
   mattermost:db:load:
-    desc: Load the mattermost database from volume1/db.sql
+    desc: Load the mattermost database from volume/db.sql
     cmds:
-      - docker exec -i -t docker_mattermost_1 /volume1/load.sh
+      - docker exec -i -t docker_mattermost_1 /volume/load.sh
 
