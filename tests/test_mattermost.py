@@ -1,42 +1,74 @@
 """Plugin tests."""
-import unittest
 
 from cmem_plugin_mattermost.workflow.mattermost_plugin import MattermostPlugin
+
+pytest_plugins = ["docker_compose"]
 
 
 url = "http://localhost:8065"
 access_token = "ah85ckhk6ib6zqqjh7i7j16hra"
 bot_name = "plugin-test"
-user = "cmempy-developer"
+user = "cmempy-developer, user0example, user1@example.com, User Example2, userex3"
 channel = "town-square"
 message = "test"
-cpm = MattermostPlugin(
-    url,
-    access_token,
-    bot_name,
-    user,
-    channel,
-    message
-)
 
 
-# TODO: test-send message to a user
-class TestMattermostPlugin(unittest.TestCase):
-    def test_send_message_with_bot_to_user(self):
+def test_send_message_with_bot_to_user(homepage):
+    waite_request = homepage
+    MattermostPlugin(waite_request,
+                     access_token,
+                     bot_name,
+                     "cmempy-developer",
+                     "",
+                     "Single user test message"
+                     ).send_message_with_bot_to_user()
 
-        cpm.send_message_with_bot_to_user()
 
-    def test_send_message_with_bot_to_channel(self):
+def test_send_message_with_bot_to_multiple_user(homepage):
+    waite_request = homepage
+    MattermostPlugin(waite_request,
+                     access_token,
+                     bot_name,
+                     user,
+                     "",
+                     "Multiple user test message"
+                     ).send_message_with_bot_to_user()
 
-        cpm.send_message_with_bot_to_channel()
 
-    def test_get_user_id_list(self):
-        self.assertEqual(cpm.get_user_id_list(), ["hruniqwds7gg5bcm5fmn931iih"])
+def test_send_message_with_bot_to_channel(homepage):
+    waite_request = homepage
+    MattermostPlugin(waite_request,
+                     access_token,
+                     bot_name,
+                     "",
+                     channel,
+                     "Channel test message"
+                     ).send_message_with_bot_to_channel()
 
-    def test_get_channel_id(self):
-        self.assertEqual(cpm.get_channel_id(), "qzzdms4tyb8zzbo5e8b8r56mtc")
-# TODO: test-send message to user multiple users
 
-# TODO: test-send message to a channel
+def test_get_user_id_list(homepage):
+    waite_request = homepage
+    assert(MattermostPlugin(
+        waite_request,
+        access_token,
+        bot_name,
+        user,
+        channel,
+        message
+    ).get_user_id_list() == ["hruniqwds7gg5bcm5fmn931iih",
+                                              "r3qsjphq97fatecdtye9kmeijw",
+                                              "36itfo66b7dyxc9x9nec4pssoc",
+                                              "z85twbta8b8bpe3qaf7n3iecwa",
+                                              "3j4wossgfirburd63ftd5mq16c"])
 
-# TODO: test-userid, channelid methods
+
+def test_get_channel_id(homepage):
+    waite_request = homepage
+    assert(MattermostPlugin(
+        waite_request,
+        access_token,
+        bot_name,
+        user,
+        channel,
+        message
+    ).get_channel_id() == "qzzdms4tyb8zzbo5e8b8r56mtc")
