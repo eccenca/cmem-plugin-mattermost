@@ -34,6 +34,7 @@ echo-env-variable:
     - docker:dind
   script:
     - echo $CI_PROJECT_DIR
+    - set 
     - echo $PWD
     - ls
     - ls docker/volume
