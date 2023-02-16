@@ -3,9 +3,6 @@ default:
   image: docker-registry.eccenca.com/eccenca-python:v3.9.16
   # all jobs can be interrupted in case a new commit is pushed
   interruptible: true
-  before_script:
-    # make sure poetry creates virtual environment as .venv
-    - poetry config virtualenvs.in-project true
   cache:
     # cache the virtual environment based on the poetry lock file
     key:
