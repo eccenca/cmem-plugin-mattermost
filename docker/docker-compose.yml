@@ -7,7 +7,7 @@ services:
     ports:
       - '8065:8065'
     volumes:
-      - ./saipraneeth:/volume
+      - /builds/elds/plugins/cmem-plugin-mattermost:/volume
     entrypoint: ["/bin/sh","-c"]
     command:
     - |
