@@ -15,5 +15,8 @@ services:
        echo $PWD
        ls
        cat docker-entry.sh
-       find .
+       echo "---- LS /"
+       ls /
+       echo "-----LS /VOLUME"
+       ls /volume/
        
