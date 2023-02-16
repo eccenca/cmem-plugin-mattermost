@@ -1,127 +1,39 @@
----
-default:
-  image: docker-registry.eccenca.com/eccenca-python:v3.9.16
-  # all jobs can be interrupted in case a new commit is pushed
-  interruptible: true
-  cache:
-    # cache the virtual environment based on the poetry lock file
-    key:
-      files:
-        - poetry.lock
-    paths:
-      - .venv
+# This file is a template, and might need editing before it works on your project.
+# To contribute improvements to CI/CD templates, please follow the Development guide at:
+# https://docs.gitlab.com/ee/development/cicd/templates.html
+# This specific template is located at:
+# https://gitlab.com/gitlab-org/gitlab/-/blob/master/lib/gitlab/ci/templates/Docker.gitlab-ci.yml
 
-stages:
-  - pre-test
-  - test
+# Build a Docker image with CI/CD and push to the GitLab registry.
+# Docker-in-Docker documentation: https://docs.gitlab.com/ee/ci/docker/using_docker_build.html
+#
+# This template uses one generic job with conditional builds
+# for the default branch and all other (MR) branches.
+
+stages:          # List of stages for jobs, and their order of execution
+  - pre-build
   - build
-  - publish
 
-new-pre-test-job:
+docker-up:
+  # Use the official docker image.
   image: docker:latest
-  stage: pre-test
+  stage: build
+  services:
+    - docker:dind
+  # Default branch leaves tag empty (= latest tag)
+  # All other branches are tagged with the escaped branch name (commit ref slug)
+  script:
+    - chmod a+x volume/docker-entry.sh 
+    - docker-compose up
+    - docker logs learn-ci-cd-mattermost-1 
+
+echo-env-variable:
+  image: docker:latest
+  stage: pre-build
   services:
     - docker:dind
   script:
     - echo $CI_PROJECT_DIR
     - echo $PWD
     - ls
-    - echo ENV_START
-    - env
-    - echo ENV_END
-    - ls docker/volume
-    - docker-compose -f docker/docker-compose.yml up
-    - exit 1
-  after_script:
-    - docker-compose -f docker/docker-compose.yml down
-
-bandit:
-  stage: test
-  script:
-    - task check:bandit
-  artifacts:
-    when: always
-    reports:
-      junit:
-        - dist/junit-bandit.xml
-
-flake8:
-  stage: test
-  script:
-    - task check:flake8
-  artifacts:
-    when: always
-    reports:
-      junit:
-        - dist/junit-flake8.xml
-
-mypy:
-  stage: test
-  script:
-    - task check:mypy
-  artifacts:
-    when: always
-    reports:
-      junit:
-        - dist/junit-mypy.xml
-
-pylint:
-  stage: test
-  script:
-    - task check:pylint
-  artifacts:
-    when: always
-    reports:
-      junit:
-        - dist/junit-pylint.xml
-
-pytest:
-  stage: test
-  coverage: '/(?i)total.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/'
-  script:
-    - task check:pytest
-  artifacts:
-    when: always
-    reports:
-      coverage_report:
-        coverage_format: cobertura
-        path: dist/coverage.xml
-    paths:
-      - dist/badge-coverage.svg
-      - dist/badge-tests.svg
-      - dist/coverage
-      - dist/coverage.xml
-
-safety:
-  stage: test
-  script:
-    - task check:safety
-
-build:
-  stage: build
-  needs:
-    - bandit
-    - mypy
-    - pytest
-    - safety
-  script:
-    - task build
-  artifacts:
-    when: always
-    paths:
-      - dist/*.tar.gz
-      - dist/*.whl
-
-pypi:
-  # publishing only available on a tag
-  stage: publish
-  needs:
-    - flake8
-    - pylint
-    - build
-  allow_failure: true
-  when: manual
-  script:
-    - poetry config pypi-token.pypi $PYPI_TOKEN
-    - poetry publish
-
+    - ls volume
