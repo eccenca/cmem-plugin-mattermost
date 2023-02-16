@@ -1,11 +1,10 @@
 # Changes here will be overwritten by Copier
-_commit: v3.5.0
+_commit: v3.6.0
 _src_path: gh:eccenca/cmem-plugin-template
 author_mail: hannes.hartmann@eccenca.com
 author_name: Hannes Hartmann
-github_page: ''
-project_description: Create awesome Knowledge Graphs with eccenca Corporate Memory
-    :-)
+github_page: https://github.com/eccenca/cmem-plugin-mattermost
+project_description: Send messages to Mattermost channels and users.
 project_slug: mattermost
-pypi: true
+pypi: false
 
