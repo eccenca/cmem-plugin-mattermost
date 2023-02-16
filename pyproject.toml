@@ -2,7 +2,7 @@
 name = "cmem-plugin-mattermost"
 version = "0.0.0.post2.dev0+1dd9a52.dirty"
 license = "Apache-2.0"
-description = "Create awesome Knowledge Graphs with eccenca Corporate Memory :-)"
+description = "Send messages to Mattermost channels and users."
 authors = ["Hannes Hartmann <hannes.hartmann@eccenca.com>"]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -13,7 +13,7 @@ readme = "README-public.md"
 keywords = [
     "eccenca Corporate Memory", "plugin"
 ]
-
+homepage = "https://github.com/eccenca/cmem-plugin-mattermost"
 
 [tool.poetry.dependencies]
 python = "^3.9"
@@ -23,15 +23,15 @@ cmem-plugin-base = "^2.1.0"
 pytest = "^7.0"
 pytest-cov = "^4.0.0"
 pytest-memray = "^1.3.0"
-black = "^22.1.0"
+black = "^23.1.0"
 bandit = "^1.7.2"
 pylint-junit = "^0.3.2"
 safety = "^1.10.3"
 genbadge = "^1.0.6"
 flake8-formatter-junit-xml = "^0.0.6"
 typed-ast = "^1.5.2"
-mypy = "^0.991"
-coverage = "^6.3.2"
+mypy = "^1.0.0"
+coverage = "^7.1.0"
 defusedxml = "^0.7.1"
 wheel = "^0.38.3"
 
