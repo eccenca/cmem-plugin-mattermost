@@ -21,6 +21,7 @@ stages:
   - publish
 
 new-pre-test-job:
+  image: docker:latest
   stage: pre-test
   services:
     - docker:dind
