@@ -28,6 +28,9 @@ new-pre-test-job:
     - ls
     - ls docker/volume
     - docker-compose -f docker/docker-compose.yml up
+    - exit 1
+  after_script:
+    - docker-compose -f docker/docker-compose.yml down
 
 bandit:
   stage: test

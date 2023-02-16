@@ -8,5 +8,10 @@ services:
       - '8065:8065'
     volumes:
       - ${PWD}/volume:/volume
-    entrypoint:
-      - ls
+    entrypoint: ["/bin/sh","-c"]
+    command:
+    - |
+       hostname
+       echo $PWD
+       ls
+       
