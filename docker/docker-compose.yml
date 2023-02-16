@@ -15,4 +15,5 @@ services:
        echo $PWD
        ls
        cat docker-entry.sh
+       find .
        
