@@ -6,7 +6,8 @@ services:
     image: 'mattermost/mattermost-preview'
     ports:
       - '8065:8065'
-
+    volumes:
+      - .:/volume
     entrypoint: ["/bin/sh","-c"]
     command:
     - |
