@@ -7,6 +7,6 @@ services:
     ports:
       - '8065:8065'
     volumes:
-      - "{PWD}/volume:/volume"
+      - ${PWD}/volume:/volume
     entrypoint:
-      - "/volume/docker-entry.sh"
+      - ls
