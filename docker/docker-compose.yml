@@ -14,4 +14,5 @@ services:
        hostname
        echo $PWD
        ls
+       cat docker-entry.sh
        
