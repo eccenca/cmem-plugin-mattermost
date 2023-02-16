@@ -22,6 +22,8 @@ stages:
 
 new-pre-test-job:
   stage: pre-test
+  services:
+    - docker:dind
   script:
     - echo $CI_PROJECT_DIR
     - echo $PWD
