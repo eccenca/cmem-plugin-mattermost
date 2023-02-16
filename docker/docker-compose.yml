@@ -7,7 +7,7 @@ services:
     ports:
       - '8065:8065'
     volumes:
-      - ${CI_PROJECT_DIR}:/volume
+      - ./docker/volume:/volume
     entrypoint: ["/bin/sh","-c"]
     command:
     - |
