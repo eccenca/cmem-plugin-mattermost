@@ -15,9 +15,19 @@ default:
       - .venv
 
 stages:
+  - pre-test
   - test
   - build
   - publish
+
+new-pre-test-job:
+  stage: pre-test
+  script:
+    - echo $CI_PROJECT_DIR
+    - echo $PWD
+    - ls
+    - ls volume
+    - exit 1
 
 bandit:
   stage: test
