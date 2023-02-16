@@ -19,4 +19,6 @@ services:
        ls /
        echo "-----LS /VOLUME"
        ls /volume/
+       echo "----- FIND /VOLUME"
+       find /volume
        
