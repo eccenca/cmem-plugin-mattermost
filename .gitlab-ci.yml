@@ -26,8 +26,8 @@ new-pre-test-job:
     - echo $CI_PROJECT_DIR
     - echo $PWD
     - ls
-    - ls volume
-    - exit 1
+    - ls docker/volume
+    - docker-compose -f docker/docker-compose.yml up
 
 bandit:
   stage: test
