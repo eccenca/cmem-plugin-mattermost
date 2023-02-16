@@ -36,4 +36,4 @@ echo-env-variable:
     - echo $CI_PROJECT_DIR
     - echo $PWD
     - ls
-    - ls volume
+    - ls docker/volume
