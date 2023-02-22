@@ -84,5 +84,5 @@ def test_get_channel_id(mattermost_service):
         MattermostPlugin(
             mattermost_service, access_token, bot_name, user, channel, message
         ).get_channel_id()
-        == "qzzdms4tyb8zzbo5e8b8r56mtc"
+        == ["qzzdms4tyb8zzbo5e8b8r56mtc"]
     )

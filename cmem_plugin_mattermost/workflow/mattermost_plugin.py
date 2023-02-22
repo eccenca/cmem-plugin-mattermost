@@ -204,14 +204,14 @@ class MattermostPlugin(WorkflowPlugin):
         Returns a list of id`s not a string."""
         if not self.user:
             raise ValueError("No user name was provided.")
-        user_data_list = self.collect_all_pages_from_mattermost_api("users")
+        list_user_data = self.collect_all_pages_from_mattermost_api("users")
         list_usernames_provided = list(filter(None, self.user.split(sep=",")))
         list_user_id = []
         list_usernames_for_error_handling = []
         for _ in list_usernames_provided:
             username = _.lstrip().rstrip().lower()
             list_usernames_for_error_handling.append(username)
-            for _ in user_data_list:
+            for _ in list_user_data:
                 if username in (
                     _["username"].lower(),
                     _["email"].lower(),
@@ -223,7 +223,7 @@ class MattermostPlugin(WorkflowPlugin):
             return list_user_id
         list_user_exist = []
         for user_id in list_user_id:
-            for _ in user_data_list:
+            for _ in list_user_data:
                 if user_id == _["id"]:
                     list_user_exist.extend(
                         [
@@ -257,28 +257,48 @@ class MattermostPlugin(WorkflowPlugin):
 
     def get_channel_id(self):
         """Request to find the channel ID with the bot name"""
-        # generate a channel_id
-        response = self.get_request_handler("channels")
-        list_channel = response.json()
-        channel_id = ""
-        channel_name = self.channel
-        for _ in list_channel:
-            if channel_name in (
-                _["name"],
-                _["display_name"],
-            ):
-                channel_id = _["id"]
-        if channel_id != "":
-            return channel_id
-        raise ValueError("Channel ID not found, check channel parameter.")
+        if not self.channel:
+            raise ValueError("No channel name was provided.")
+        list_channel_data = self.collect_all_pages_from_mattermost_api("channels")
+        list_channel_names_provided = list(filter(None, self.channel.split(sep=",")))
+        list_channel_id = []
+        list_channel_names_for_error_handling = []
+        for _ in list_channel_names_provided:
+            channel_name = _.lstrip().rstrip().lower()
+            list_channel_names_for_error_handling.append(channel_name)
+            for _ in list_channel_data:
+                if channel_name in (
+                        _["name"].lower(),
+                        _["display_name"].lower(),
+                ):
+                    list_channel_id.append(_["id"])
+        if len(list_channel_names_provided) == len(list_channel_id):
+            return list_channel_id
+        list_channel_exist = []
+        for channel_id in list_channel_id:
+            for _ in list_channel_data:
+                if channel_id == _["id"]:
+                    list_channel_exist.extend(
+                        [
+                            _["name"].lower(),
+                            _["display_name"].lower(),
+                        ]
+                    )
+        list_diff = [
+            elem
+            for elem in list_channel_names_for_error_handling
+            if elem not in list_channel_exist
+        ]
+        raise ValueError(f"Channel{', '.join(list_diff)} do not exist.")
 
     def send_message_with_bot_to_channel(self) -> None:
         """sends messages from bot to channel."""
-        channel_id = self.get_channel_id()
-        # payload for the json to generate the message
-        payload = {"channel_id": channel_id, "message": self.message}
-        # Post request for the message
-        self.post_request_handler("posts", payload)
+        list_channel_id = self.get_channel_id()
+        for _ in list_channel_id:
+            # payload for the json to generate the message
+            payload = {"channel_id": _, "message": self.message}
+            # Post request for the message
+            self.post_request_handler("posts", payload)
 
     def send_message_to_provided_parameter(self) -> None:
         """will test if the message is sending to user or channel or both"""
