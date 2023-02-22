@@ -39,6 +39,19 @@ def test_send_message_with_bot_to_channel(mattermost_service):
     ).send_message_with_bot_to_channel()
 
 
+def test_send_message_with_bot_to_channel_error(mattermost_service):
+    with pytest.raises(ValueError):
+        wrong_channel = "wrong_channel_name"
+        MattermostPlugin(
+            mattermost_service,
+            access_token,
+            bot_name,
+            "",
+            wrong_channel,
+            "Channel test message"
+        ).send_message_with_bot_to_channel()
+
+
 def test_get_user_id_list(mattermost_service):
     assert MattermostPlugin(
         mattermost_service, access_token, bot_name, user, channel, message
