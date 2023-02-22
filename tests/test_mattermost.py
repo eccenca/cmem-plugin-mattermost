@@ -29,7 +29,7 @@ def test_send_message_with_bot_to_multiple_user(mattermost_service):
         bot_name,
         user,
         "",
-        "Multiple user test message"
+        "Multiple user test message",
     ).send_message_with_bot_to_user()
 
 
@@ -52,15 +52,16 @@ def test_get_user_id_list(mattermost_service):
 
 
 def test_get_user_id_list_with_closing_comma(mattermost_service):
-    user_with_closing_comma = "cmempy-developer, user0example," \
-                              " user1@example.com, User Example2, userex3,"
+    user_with_closing_comma = (
+        "cmempy-developer, user0example," " user1@example.com, User Example2, userex3,"
+    )
     assert MattermostPlugin(
         mattermost_service,
         access_token,
         bot_name,
         user_with_closing_comma,
         channel,
-        message
+        message,
     ).get_user_id_list() == [
         "hruniqwds7gg5bcm5fmn931iih",
         "r3qsjphq97fatecdtye9kmeijw",

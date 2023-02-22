@@ -203,19 +203,8 @@ class MattermostPlugin(WorkflowPlugin):
         """Request to find the user ID with the username.
         Returns a list of id`s not a string."""
         if not self.user:
-            raise ValueError(
-                "No user name was provided."
-            )
-        i = 0
-        user_data_list = []
-        while True:
-            response = self.get_request_handler(f"users?page={i}&per_page=200")
-            i += 1
-            list_userentities = response.json()
-            if list_userentities:
-                user_data_list.extend(list_userentities)
-            else:
-                break
+            raise ValueError("No user name was provided.")
+        user_data_list = self.collect_all_pages_from_mattermost_api("users")
         list_usernames_provided = list(filter(None, self.user.split(sep=",")))
         list_user_id = []
         list_usernames_for_error_handling = []
@@ -245,7 +234,8 @@ class MattermostPlugin(WorkflowPlugin):
                         ]
                     )
         list_diff = [
-            elem for elem in list_usernames_for_error_handling
+            elem
+            for elem in list_usernames_for_error_handling
             if elem not in list_user_exist
         ]
         raise ValueError(f"User{', '.join(list_diff)} do not exist.")
@@ -299,3 +289,20 @@ class MattermostPlugin(WorkflowPlugin):
             self.send_message_with_bot_to_user()
         elif self.channel and not self.user:
             self.send_message_with_bot_to_channel()
+
+    def collect_all_pages_from_mattermost_api(self, api_parameter):
+        """Collects multiple pages in one list of
+        the Mattermost api when the data is split up."""
+        i = 0
+        user_data_list = []
+        while True:
+            response = self.get_request_handler(
+                f"{api_parameter}?page={i}&per_page=200"
+            )
+            i += 1
+            list_userentities = response.json()
+            if list_userentities:
+                user_data_list.extend(list_userentities)
+            else:
+                break
+        return user_data_list
