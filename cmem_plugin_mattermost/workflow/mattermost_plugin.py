@@ -96,10 +96,10 @@ class MattermostPlugin(WorkflowPlugin):
         self.log.info("Mattermost plugin started.")
         # fix message with every start, could be used at creating of the workflow item
         # TODO: check with "if not self.user" ?
-        if self.user == "" and self.channel == "" and not inputs:
-            # TODO extend message OR silently doing nothing
-            raise ValueError("No inputs or static message.")
-        # TODO: fail on existing input entities but not all paths are there (for channel) + add test for that
+        if not self.user and not self.channel and not inputs:
+            pass
+        # TODO: fail on existing input entities but not all
+        #  paths are there (for channel) + add test for that
         if self.user != "" or self.channel != "":
             self.check_between_user_or_channel_message()
         if inputs:
@@ -203,6 +203,10 @@ class MattermostPlugin(WorkflowPlugin):
     def get_user_id_list(self):
         """Request to find the user ID with the username.
         Returns a list of id`s not a string."""
+        if not self.user:
+            raise ValueError(
+                "No user name was provided."
+            )
         i = 0
         user_data_list = []
         while True:
@@ -213,16 +217,12 @@ class MattermostPlugin(WorkflowPlugin):
                 user_data_list.extend(list_userentities)
             else:
                 break
-        list_usernames_provided = self.user.split(sep=",")
+        list_usernames_provided = list(filter(None, self.user.split(sep=",")))
         list_user_id = []
-        list_usernames_for_error = []
+        list_usernames_for_error_handling = []
         for _ in list_usernames_provided:
-            username = _.lstrip().lower()
-            if username == "":
-                raise ValueError(
-                    "No user name was provided or useless comma at the end."
-                )
-            list_usernames_for_error.append(username)
+            username = _.lstrip().rstrip().lower()
+            list_usernames_for_error_handling.append(username)
             for _ in user_data_list:
                 if username in (
                     _["username"].lower(),
@@ -246,9 +246,10 @@ class MattermostPlugin(WorkflowPlugin):
                         ]
                     )
         list_diff = [
-            elem for elem in list_usernames_for_error if elem not in list_user_exist
+            elem for elem in list_usernames_for_error_handling
+            if elem not in list_user_exist
         ]
-        raise ValueError(f"User {', '.join(list_diff)} do not exist.")
+        raise ValueError(f"User{', '.join(list_diff)} do not exist.")
 
     def send_message_with_bot_to_user(self):
         """sends messages from bot to one or more users."""

@@ -1,4 +1,5 @@
 """Plugin tests."""
+import pytest
 
 from cmem_plugin_mattermost.workflow.mattermost_plugin import MattermostPlugin
 
@@ -48,6 +49,33 @@ def test_get_user_id_list(mattermost_service):
         "z85twbta8b8bpe3qaf7n3iecwa",
         "3j4wossgfirburd63ftd5mq16c",
     ]
+
+
+def test_get_user_id_list_with_closing_comma(mattermost_service):
+    user_with_closing_comma = "cmempy-developer, user0example," \
+                              " user1@example.com, User Example2, userex3,"
+    assert MattermostPlugin(
+        mattermost_service,
+        access_token,
+        bot_name,
+        user_with_closing_comma,
+        channel,
+        message
+    ).get_user_id_list() == [
+        "hruniqwds7gg5bcm5fmn931iih",
+        "r3qsjphq97fatecdtye9kmeijw",
+        "36itfo66b7dyxc9x9nec4pssoc",
+        "z85twbta8b8bpe3qaf7n3iecwa",
+        "3j4wossgfirburd63ftd5mq16c",
+    ]
+
+
+def test_get_user_id_list_error(mattermost_service):
+    with pytest.raises(ValueError):
+        user_empty = ""
+        MattermostPlugin(
+            mattermost_service, access_token, bot_name, user_empty, channel, message
+        ).get_user_id_list()
 
 
 def test_get_channel_id(mattermost_service):
