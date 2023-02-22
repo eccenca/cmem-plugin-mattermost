@@ -85,8 +85,6 @@ class MattermostPlugin(WorkflowPlugin):
         channel: str,
         message: str,
     ) -> None:
-        if not all(isinstance(param, str) for param in [url, access_token, bot_name]):
-            raise ValueError("One or more restricted Parameter invalid.")
         self.url = url
         self.access_token = access_token
         self.bot_name = bot_name
@@ -95,10 +93,13 @@ class MattermostPlugin(WorkflowPlugin):
         self.message = message
 
     def execute(self, inputs: Sequence[Entities], context: ExecutionContext) -> None:
-        self.log.info("Mattermost Plugin Started")
+        self.log.info("Mattermost plugin started.")
         # fix message with every start, could be used at creating of the workflow item
+        # TODO: check with "if not self.user" ?
         if self.user == "" and self.channel == "" and not inputs:
-            raise ValueError("No Inputs or Static Message.")
+            # TODO extend message OR silently doing nothing
+            raise ValueError("No inputs or static message.")
+        # TODO: fail on existing input entities but not all paths are there (for channel) + add test for that
         if self.user != "" or self.channel != "":
             self.check_between_user_or_channel_message()
         if inputs:
@@ -121,6 +122,8 @@ class MattermostPlugin(WorkflowPlugin):
                         else:
                             param_value = ""
 
+                        # TODO: extract to a message class or similar
+                        # Advantage: more self contained, better structure, ...
                         if column_name == "user":
                             self.user = param_value
                         elif column_name == "channel":
@@ -290,6 +293,7 @@ class MattermostPlugin(WorkflowPlugin):
     def check_between_user_or_channel_message(self) -> None:
         """will test if the message is sending to user or channel or both"""
         if self.user != "" and self.channel != "":
+            # TODO: what do you want to test here?
             if self.get_user_id_list() != ValueError:
                 self.send_message_with_bot_to_channel()
             self.send_message_with_bot_to_user()
