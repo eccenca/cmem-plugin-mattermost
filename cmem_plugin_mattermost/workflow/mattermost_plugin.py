@@ -95,13 +95,12 @@ class MattermostPlugin(WorkflowPlugin):
     def execute(self, inputs: Sequence[Entities], context: ExecutionContext) -> None:
         self.log.info("Mattermost plugin started.")
         # fix message with every start, could be used at creating of the workflow item
-        # TODO: check with "if not self.user" ?
         if not self.user and not self.channel and not inputs:
             pass
         # TODO: fail on existing input entities but not all
         #  paths are there (for channel) + add test for that
         if self.user != "" or self.channel != "":
-            self.check_between_user_or_channel_message()
+            self.send_message_to_provided_parameter()
         if inputs:
             entities_counter = 0
             value_counter = 0
@@ -133,7 +132,7 @@ class MattermostPlugin(WorkflowPlugin):
                         i += 1
                         value_counter += 1
 
-                    self.check_between_user_or_channel_message()
+                    self.send_message_to_provided_parameter()
 
             context.report.update(
                 ExecutionReport(
@@ -291,14 +290,12 @@ class MattermostPlugin(WorkflowPlugin):
         # Post request for the message
         self.post_request_handler("posts", payload)
 
-    def check_between_user_or_channel_message(self) -> None:
+    def send_message_to_provided_parameter(self) -> None:
         """will test if the message is sending to user or channel or both"""
-        if self.user != "" and self.channel != "":
-            # TODO: what do you want to test here?
-            if self.get_user_id_list() != ValueError:
-                self.send_message_with_bot_to_channel()
+        if self.user and self.channel:
+            self.send_message_with_bot_to_channel()
             self.send_message_with_bot_to_user()
-        elif self.channel == "" and self.user != "":
+        elif self.user and not self.channel:
             self.send_message_with_bot_to_user()
-        elif self.user == "" and self.channel != "":
+        elif self.channel and not self.user:
             self.send_message_with_bot_to_channel()
