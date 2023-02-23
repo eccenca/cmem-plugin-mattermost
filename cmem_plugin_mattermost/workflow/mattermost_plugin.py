@@ -101,7 +101,10 @@ class MattermostPlugin(WorkflowPlugin):
             self.send_message_to_provided_parameter()
         if inputs:
             entities_counter = 0
-            value_counter = 0
+            channel_counter = 0
+            channels = []
+            users = []
+            user_counter = 0
             # Entity/ies
             for item in inputs:
                 column_names = [ep.path for ep in item.schema.paths]
@@ -110,21 +113,26 @@ class MattermostPlugin(WorkflowPlugin):
                     entities_counter += 1
                     i = 0
                     # row of given Entity
-                    for column_name in column_names:
+                    for _ in column_names:
                         if len(entity.values[i]) > 0:
                             param_value = entity.values[i][0]
                         else:
                             param_value = ""
                         # TODO: extract to a message class or similar
                         # Advantage: more self contained, better structure, ...
-                        if column_name == "user":
+                        if _ == "user":
                             self.user = param_value
-                        elif column_name == "channel":
+                        elif _ == "channel":
                             self.channel = param_value
-                        elif column_name == "message":
+                        elif _ == "message":
                             self.message = param_value
                         i += 1
-                        value_counter += 1
+                        list_channel = format_string_into_list(self.channel)
+                        list_user = format_string_into_list(self.user)
+                        channels.append(list_channel)
+                        users.append(list_user)
+                        channel_counter += len(list_channel)
+                        user_counter += len(list_user)
 
                     self.send_message_to_provided_parameter()
 
@@ -134,8 +142,11 @@ class MattermostPlugin(WorkflowPlugin):
                     operation="wait",
                     operation_desc="entities received",
                     summary=[
-                        ("No. of entities", f"{entities_counter}"),
-                        ("No. of values", f"{value_counter}"),
+                        ("No. of channel who get a message", f"{channel_counter}"
+                         "No. of user who get a direct message", f"{user_counter}"
+                         "No. of messages send", f"{user_counter}"),
+                        (f"List of the channels: {channels}",
+                         f"List of the user: {users}",),
                     ],
                 )
             )
