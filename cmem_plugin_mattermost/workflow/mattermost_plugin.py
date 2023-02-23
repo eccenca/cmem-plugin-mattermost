@@ -239,21 +239,18 @@ class MattermostPlugin(WorkflowPlugin):
 
     def send_message_with_bot_to_user(self):
         """sends messages from bot to one or more users."""
-        if self.message:
-            list_user_id = self.get_user_id_list()
-            bot_id = self.get_bot_id()
-            for _ in list_user_id:
-                # payload for json to generate a direct channel with post request
-                data = [bot_id, _]
-                # post request to generate the direct channel
-                response = self.post_request_handler("channels/direct", data)
-                channel_id = response.json()["id"]
-                # payload for the json to generate the message
-                payload = {"channel_id": channel_id, "message": self.message}
-                # post request to send the message
-                self.post_request_handler("posts", payload)
-        else:
-            raise ValueError("Empty message.")
+        list_user_id = self.get_user_id_list()
+        bot_id = self.get_bot_id()
+        for _ in list_user_id:
+            # payload for json to generate a direct channel with post request
+            data = [bot_id, _]
+            # post request to generate the direct channel
+            response = self.post_request_handler("channels/direct", data)
+            channel_id = response.json()["id"]
+            # payload for the json to generate the message
+            payload = {"channel_id": channel_id, "message": self.message}
+            # post request to send the message
+            self.post_request_handler("posts", payload)
 
     def get_channel_id(self):
         """Request to find the channel ID with the bot name"""
@@ -302,13 +299,16 @@ class MattermostPlugin(WorkflowPlugin):
 
     def send_message_to_provided_parameter(self) -> None:
         """will test if the message is sending to user or channel or both"""
-        if self.user and self.channel:
-            self.send_message_with_bot_to_channel()
-            self.send_message_with_bot_to_user()
-        elif self.user and not self.channel:
-            self.send_message_with_bot_to_user()
-        elif self.channel and not self.user:
-            self.send_message_with_bot_to_channel()
+        if self.message:
+            if self.user and self.channel:
+                self.send_message_with_bot_to_channel()
+                self.send_message_with_bot_to_user()
+            elif self.user and not self.channel:
+                self.send_message_with_bot_to_user()
+            elif self.channel and not self.user:
+                self.send_message_with_bot_to_channel()
+        else:
+            raise ValueError("Empty message.")
 
     def collect_all_pages_from_mattermost_api(self, api_parameter):
         """Collects multiple pages in one list of

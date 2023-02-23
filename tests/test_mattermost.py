@@ -21,8 +21,7 @@ def test_execute_with_empty_message_error(mattermost_service):
             channel,
             "",
         )
-        mp.send_message_with_bot_to_user()
-        mp.send_message_with_bot_to_channel()
+        mp.send_message_to_provided_parameter()
 
 
 def test_send_message_with_bot_to_user(mattermost_service):
