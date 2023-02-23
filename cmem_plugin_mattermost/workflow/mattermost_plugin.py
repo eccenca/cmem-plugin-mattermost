@@ -97,9 +97,7 @@ class MattermostPlugin(WorkflowPlugin):
         # fix message with every start, could be used at creating of the workflow item
         if not self.user and not self.channel and not inputs:
             pass
-        # TODO: fail on existing input entities but not all
-        #  paths are there (for channel) + add test for that
-        if self.user != "" or self.channel != "":
+        if self.user or self.channel:
             self.send_message_to_provided_parameter()
         if inputs:
             entities_counter = 0
@@ -120,7 +118,6 @@ class MattermostPlugin(WorkflowPlugin):
                             param_value = entity.values[i][0]
                         else:
                             param_value = ""
-
                         # TODO: extract to a message class or similar
                         # Advantage: more self contained, better structure, ...
                         if column_name == "user":
@@ -242,18 +239,21 @@ class MattermostPlugin(WorkflowPlugin):
 
     def send_message_with_bot_to_user(self):
         """sends messages from bot to one or more users."""
-        list_user_id = self.get_user_id_list()
-        bot_id = self.get_bot_id()
-        for _ in list_user_id:
-            # payload for json to generate a direct channel with post request
-            data = [bot_id, _]
-            # post request to generate the direct channel
-            response = self.post_request_handler("channels/direct", data)
-            channel_id = response.json()["id"]
-            # payload for the json to generate the message
-            payload = {"channel_id": channel_id, "message": self.message}
-            # post request to send the message
-            self.post_request_handler("posts", payload)
+        if self.message:
+            list_user_id = self.get_user_id_list()
+            bot_id = self.get_bot_id()
+            for _ in list_user_id:
+                # payload for json to generate a direct channel with post request
+                data = [bot_id, _]
+                # post request to generate the direct channel
+                response = self.post_request_handler("channels/direct", data)
+                channel_id = response.json()["id"]
+                # payload for the json to generate the message
+                payload = {"channel_id": channel_id, "message": self.message}
+                # post request to send the message
+                self.post_request_handler("posts", payload)
+        else:
+            raise ValueError("Empty message.")
 
     def get_channel_id(self):
         """Request to find the channel ID with the bot name"""
