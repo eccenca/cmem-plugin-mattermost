@@ -108,9 +108,6 @@ class MattermostPlugin(WorkflowPlugin):
                 # columns of given Entity
                 for entity in item.entities:
                     entities_counter += 1
-                    self.user = ""
-                    self.channel = ""
-                    self.message = ""
                     i = 0
                     # row of given Entity
                     for column_name in column_names:
@@ -202,7 +199,7 @@ class MattermostPlugin(WorkflowPlugin):
         if not self.user:
             raise ValueError("No user name was provided.")
         list_user_data = self.collect_all_pages_from_mattermost_api("users")
-        list_usernames_provided = list(filter(None, self.user.split(sep=",")))
+        list_usernames_provided = format_string_into_list(self.user)
         list_user_id = []
         list_usernames_for_error_handling = []
         for _ in list_usernames_provided:
@@ -257,7 +254,7 @@ class MattermostPlugin(WorkflowPlugin):
         if not self.channel:
             raise ValueError("No channel name was provided.")
         list_channel_data = self.collect_all_pages_from_mattermost_api("channels")
-        list_channel_names_provided = list(filter(None, self.channel.split(sep=",")))
+        list_channel_names_provided = format_string_into_list(self.channel)
         list_channel_id = []
         list_channel_names_for_error_handling = []
         for _ in list_channel_names_provided:
@@ -320,9 +317,34 @@ class MattermostPlugin(WorkflowPlugin):
                 f"{api_parameter}?page={i}&per_page=200"
             )
             i += 1
-            list_userentities = response.json()
-            if list_userentities:
-                user_data_list.extend(list_userentities)
+            list_user_entities = response.json()
+            if list_user_entities:
+                user_data_list.extend(list_user_entities)
             else:
                 break
         return user_data_list
+
+
+def format_string_into_list(string_to_formate):
+    """Formate a string to List with using a comma as seperator
+     and removing empty values."""
+    result = list(filter(None, string_to_formate.split(sep=",")))
+
+    return result
+
+
+def extract_params_from_entity(entity):
+    """Extract parameter from given entity in a dictionary """
+    params = {}
+    for epath in entity.schema.paths:
+        if len(entity.values[0]) > 0:
+            param_value = entity.values[0][0]
+        else:
+            param_value = ""
+        if epath.path == "user":
+            params["user"] = param_value
+        elif epath.path == "channel":
+            params["channel"] = param_value
+        elif epath.path == "message":
+            params["message"] = param_value
+    return params
