@@ -49,7 +49,7 @@ the team, channel, user.
         ),
         PluginParameter(
             name="user",
-            label="Username",
+            label="User",
             description="The full name, username,"
             " nickname or email of the user you want to get the message."
             " If you want to send your message to multiple"
@@ -58,7 +58,7 @@ the team, channel, user.
         ),
         PluginParameter(
             name="channel",
-            label="Channel name",
+            label="Channel",
             description="The name or display name of the channel"
             " you want to get the message.",
             default_value="",
@@ -142,11 +142,15 @@ class MattermostPlugin(WorkflowPlugin):
                     operation="wait",
                     operation_desc="entities received",
                     summary=[
-                        ("No. of channel who get a message", f"{channel_counter}"
-                         "No. of user who get a direct message", f"{user_counter}"
-                         "No. of messages send", f"{user_counter}"),
-                        (f"List of the channels: {channels}",
-                         f"List of the user: {users}",),
+                        (
+                            f"No.{channel_counter} of channel who get a message."
+                            f" No.{user_counter} of user who get a direct message"
+                            f" No.{user_counter + channel_counter} of messages send",
+                        ),
+                        (
+                            f"List of the channels: {channels}",
+                            f"List of the user: {users}",
+                        ),
                     ],
                 )
             )
@@ -161,32 +165,22 @@ class MattermostPlugin(WorkflowPlugin):
 
     def get_request_handler(self, url_extend):
         """Handle get requests"""
-        try:
-            response = requests.get(
-                f"{self.url}/api/v4/{url_extend}",
-                headers=self.header(),
-                timeout=2,
-            )
-            if response.ok:
-                return response
-            return None
-        except requests.exceptions.Timeout:
-            return "Bad Response"
+        response = requests.get(
+            f"{self.url}/api/v4/{url_extend}",
+            headers=self.header(),
+            timeout=2,
+        )
+        return response
 
     def post_request_handler(self, url_expand, payload):
         """Handle post requests"""
-        try:
-            response = requests.post(
-                f"{self.url}/api/v4/{url_expand}",
-                headers=self.header(),
-                json=payload,
-                timeout=2,
-            )
-            if response.ok:
-                return response
-            return None
-        except requests.exceptions.Timeout:
-            return "Bad Response"
+        response = requests.post(
+            f"{self.url}/api/v4/{url_expand}",
+            headers=self.header(),
+            json=payload,
+            timeout=2,
+        )
+        return response
 
     def get_bot_id(self):
         """Request to find the bot ID with the bot name"""
@@ -273,8 +267,8 @@ class MattermostPlugin(WorkflowPlugin):
             list_channel_names_for_error_handling.append(channel_name)
             for _ in list_channel_data:
                 if channel_name in (
-                        _["name"].lower(),
-                        _["display_name"].lower(),
+                    _["name"].lower(),
+                    _["display_name"].lower(),
                 ):
                     list_channel_id.append(_["id"])
         if len(list_channel_names_provided) == len(list_channel_id):
@@ -338,24 +332,6 @@ class MattermostPlugin(WorkflowPlugin):
 
 def format_string_into_list(string_to_formate):
     """Formate a string to List with using a comma as seperator
-     and removing empty values."""
+    and removing empty values."""
     result = list(filter(None, string_to_formate.split(sep=",")))
-
     return result
-
-
-def extract_params_from_entity(entity):
-    """Extract parameter from given entity in a dictionary """
-    params = {}
-    for epath in entity.schema.paths:
-        if len(entity.values[0]) > 0:
-            param_value = entity.values[0][0]
-        else:
-            param_value = ""
-        if epath.path == "user":
-            params["user"] = param_value
-        elif epath.path == "channel":
-            params["channel"] = param_value
-        elif epath.path == "message":
-            params["message"] = param_value
-    return params
