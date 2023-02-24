@@ -101,11 +101,10 @@ class MattermostPlugin(WorkflowPlugin):
             self.send_message_to_provided_parameter()
         if inputs:
             entities_counter = 0
-            value_counter = 0
-            # channel_counter = 0
-            # channels = []
-            # users = []
-            # user_counter = 0
+            channel_counter = 0
+            channels = []
+            users = []
+            user_counter = 0
             # Entity/ies
             for item in inputs:
                 column_names = [ep.path for ep in item.schema.paths]
@@ -123,28 +122,32 @@ class MattermostPlugin(WorkflowPlugin):
                         # Advantage: more self contained, better structure, ...
                         if _ == "user":
                             self.user = param_value
-                            # list_user = format_string_into_list(self.user)
-                            # user_counter += len(list_user)
-                            # users.append(list_user)
+                            list_user = format_string_into_list(self.user)
+                            user_counter += len(list_user)
+                            users.extend(list_user)
                         elif _ == "channel":
                             self.channel = param_value
-                            # list_channel = format_string_into_list(self.channel)
-                            # channels.append(list_channel)
-                            # channel_counter += len(list_channel)
+                            list_channel = format_string_into_list(self.channel)
+                            channels.extend(list_channel)
+                            channel_counter += len(list_channel)
                         elif _ == "message":
                             self.message = param_value
                         i += 1
-                        value_counter += 1
                     self.send_message_to_provided_parameter()
-
+            users = list(dict.fromkeys(users))
+            channels = list(dict.fromkeys(channels))
             context.report.update(
                 ExecutionReport(
                     entity_count=entities_counter,
                     operation="wait",
                     operation_desc="entities received",
                     summary=[
-                        ("No. of entities", f"{entities_counter}"),
-                        ("No. of values", f"{value_counter}"),
+                        ("No. of messages send:", f"{user_counter + channel_counter}"),
+                        ("No. of direct messages", f"{user_counter}"),
+                        ("No. of channel messages", f"{channel_counter}"),
+                        ("Channels that received a message",
+                         f"{', '.join(channels)}"),
+                        ("Users who received a message", f"{', '.join(users)}"),
                     ],
                 )
             )
