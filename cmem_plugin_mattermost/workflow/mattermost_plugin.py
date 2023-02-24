@@ -101,10 +101,11 @@ class MattermostPlugin(WorkflowPlugin):
             self.send_message_to_provided_parameter()
         if inputs:
             entities_counter = 0
-            channel_counter = 0
-            channels = []
-            users = []
-            user_counter = 0
+            value_counter = 0
+            # channel_counter = 0
+            # channels = []
+            # users = []
+            # user_counter = 0
             # Entity/ies
             for item in inputs:
                 column_names = [ep.path for ep in item.schema.paths]
@@ -122,18 +123,18 @@ class MattermostPlugin(WorkflowPlugin):
                         # Advantage: more self contained, better structure, ...
                         if _ == "user":
                             self.user = param_value
+                            # list_user = format_string_into_list(self.user)
+                            # user_counter += len(list_user)
+                            # users.append(list_user)
                         elif _ == "channel":
                             self.channel = param_value
+                            # list_channel = format_string_into_list(self.channel)
+                            # channels.append(list_channel)
+                            # channel_counter += len(list_channel)
                         elif _ == "message":
                             self.message = param_value
                         i += 1
-                        list_channel = format_string_into_list(self.channel)
-                        list_user = format_string_into_list(self.user)
-                        channels.append(list_channel)
-                        users.append(list_user)
-                        channel_counter += len(list_channel)
-                        user_counter += len(list_user)
-
+                        value_counter += 1
                     self.send_message_to_provided_parameter()
 
             context.report.update(
@@ -142,15 +143,8 @@ class MattermostPlugin(WorkflowPlugin):
                     operation="wait",
                     operation_desc="entities received",
                     summary=[
-                        (
-                            f"No.{channel_counter} of channel who get a message."
-                            f" No.{user_counter} of user who get a direct message"
-                            f" No.{user_counter + channel_counter} of messages send",
-                        ),
-                        (
-                            f"List of the channels: {channels}",
-                            f"List of the user: {users}",
-                        ),
+                        ("No. of entities", f"{entities_counter}"),
+                        ("No. of values", f"{value_counter}"),
                     ],
                 )
             )
