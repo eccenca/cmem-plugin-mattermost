@@ -17,56 +17,116 @@ from cmem_plugin_base.dataintegration.plugins import WorkflowPlugin
     description="Sends automated messages in Mattermost"
     " via bot to channels or direct to users ",
     documentation="""This Plugin sends messages via
-    Mattermost bot/bots to channel or users.
+    Mattermost bot to channel(s) or user(s).
 
-The Plugin can sends automated messages to different
-server, teams, channel, user via different bots only by the name of
-the team, channel, user.
+The plugin can send messages to users and/or channels
+on your Mattermost server through your preset bot.
 
-- 'url' = URL for the Mattermost API
-- 'access_token' = The access token of the bot
-- 'bot_name' = the bot name you want to post the message with
-- 'user_name' = the username you want to get the message
-- 'channel_name' = channel name you want to post the message in
-- 'message' = the message you want to send
+<h2>Workflow mode</h2>
+
+The plugin can send a static message to the pre-configured parameters.
+This message will be sent to the defined user and/or
+channel every time the workflow is executed.
+
+For dynamic messages, the input of the parameters
+user, channel, message is done by an input via entities.
+
+<strong>To test the Mattermost plugin:</strong>
+
+1. install cmem-plugin-mattermost
+2. task custom:mattermost:start
+3. docker network connect dockerlocalhost_default docker_mattermost_1
+4. docker network inspect dockerlocalhost_default
+5. for url parameter copy docker_mattermost_1 ip and add ":8065" to ip.
+
+<h3>Mattermost test environment</h3>
+
+<h4>bot-account</h4>
+
+* name: plugin-test
+* access-token: ah85ckhk6ib6zqqjh7i7j16hra
+
+<h4>admin account</h4>
+
+* name: cmempy-developer
+    * password: cmempy-developer
+    * email: cmempy-developer@eccenca.com
+    * user ID : hruniqwds7gg5bcm5fmn931iih
+
+<h4>user accounts</h4>
+
+* name: user0example
+    * password: Password0
+    * email: user0@example.com
+    * user ID : r3qsjphq97fatecdtye9kmeijw
+</br></br>
+* name: user1example
+    * password: Password1
+    * email: user0@example.com
+    * user ID : 36itfo66b7dyxc9x9nec4pssoc
+</br></br>
+* name: user2example
+    * password: Password2
+    * email: user2@example.com
+    * firstname: User
+    * lastname: Eample2
+    * nickname: userex2
+    * user-ID : z85twbta8b8bpe3qaf7n3iecwa
+</br></br>
+* name: user3example
+    * password: Password3
+    * email: user3@example.com
+    * firstname: User
+    * lastname: Eample3
+    * nickname: userex3
+    * user-ID : 3j4wossgfirburd63ftd5mq16c
+
+To make and save custom settings,
+as well as start and close the Docker container,
+the following task commands are available:
+
+* task custom:mattermost:db:dump -> Dump the mattermost database to volume/db.sql
+* task custom:mattermost:db:load -> Load the mattermost database from volume/db.sql
+* task custom:mattermost:start -> Start or restart the mattermost orchestration
+* task custom:mattermost:stop -> Stop the mattermost orchestration
 """,
     parameters=[
         PluginParameter(
             name="url",
             label="URL",
-            description="The url of the mattermost server you want to use.",
+            description="url of mattermost server.",
         ),
         PluginParameter(
             name="access_token",
             label="Access Token",
-            description="The access token of the bot,"
-            "which was given when the bot was created.",
+            description="access token of the bot",
         ),
         PluginParameter(
             name="bot_name",
             label="Bot name",
-            description="The name or id of the bot you will send with.",
+            description="name or display name",
         ),
         PluginParameter(
             name="user",
             label="User",
             description="The full name, username,"
-            " nickname or email of the user you want to get the message."
+            " nickname or email."
             " If you want to send your message to multiple"
-            " user separate them with a comma ','.",
+            " user separate them with a comma.",
             default_value="",
         ),
         PluginParameter(
             name="channel",
             label="Channel",
-            description="The name or display name of the channel"
-            " you want to get the message.",
+            description="The name or display name"
+            " If you want to send your message to multiple"
+            " channel separate them with a comma.",
             default_value="",
         ),
         PluginParameter(
             name="message",
             label="Message",
-            description="Words, which together will be a message :-)",
+            description="max 16383 character",
             param_type=MultilineStringParameterType(),
             default_value="",
         ),
@@ -119,7 +179,7 @@ class MattermostPlugin(WorkflowPlugin):
                         else:
                             param_value = ""
                         # TODO: extract to a message class or similar
-                        # Advantage: more self contained, better structure, ...
+                        # Advantage: more self-contained, better structure, ...
                         if _ == "user":
                             self.user = param_value
                             list_user = format_string_into_list(self.user)
@@ -145,8 +205,7 @@ class MattermostPlugin(WorkflowPlugin):
                         ("No. of messages send:", f"{user_counter + channel_counter}"),
                         ("No. of direct messages", f"{user_counter}"),
                         ("No. of channel messages", f"{channel_counter}"),
-                        ("Channels that received a message",
-                         f"{', '.join(channels)}"),
+                        ("Channels that received a message", f"{', '.join(channels)}"),
                         ("Users who received a message", f"{', '.join(users)}"),
                     ],
                 )

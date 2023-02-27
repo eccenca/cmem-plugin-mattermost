@@ -49,9 +49,11 @@ def test_send_message_with_bot_to_multiple_user(mattermost_service):
 
 def test_send_message_with_bot_to_multiple_user_error(mattermost_service):
     with pytest.raises(ValueError):
-        wrong_users = "cmempy-developer, user0example, " \
-                      "wrong_user1, user1@example.com," \
-                      " User Example2, userex3, wrong_user2, wrong_user3"
+        wrong_users = (
+            "cmempy-developer, user0example, "
+            "wrong_user1, user1@example.com,"
+            " User Example2, userex3, wrong_user2, wrong_user3"
+        )
         MattermostPlugin(
             mattermost_service,
             access_token,
