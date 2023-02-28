@@ -11,7 +11,7 @@ from cmem_plugin_base.dataintegration.context import (
     UserContext,
     TaskContext,
     ExecutionContext,
-    ReportContext,
+    ReportContext, SystemContext,
 )
 
 needs_cmem = pytest.mark.skipif(
@@ -67,3 +67,18 @@ class TestExecutionContext(ExecutionContext):
         self.report = ReportContext()
         self.task = TestTaskContext(project_id=project_id, task_id=task_id)
         self.user = TestUserContext()
+
+
+class TestSystemContext(SystemContext):
+    def __init__(self):
+        self._version = "1.0.0"
+        self._prefix = "encrypted_"
+
+    def di_version(self) -> str:
+        return f"{self._version}"
+
+    def encrypt(self, value: str) -> str:
+        return f"{self._prefix + value}"
+
+    def decrypt(self, value: str) -> str:
+        return value.replace(self._prefix, "")
