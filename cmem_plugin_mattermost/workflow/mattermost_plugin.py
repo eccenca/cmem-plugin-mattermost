@@ -1,6 +1,5 @@
 """A Mattermost integration Plugin"""
 from typing import Sequence
-
 import requests
 from cmem_plugin_base.dataintegration.context import ExecutionContext, ExecutionReport
 from cmem_plugin_base.dataintegration.description import Plugin, PluginParameter
@@ -8,6 +7,7 @@ from cmem_plugin_base.dataintegration.entity import Entities
 from cmem_plugin_base.dataintegration.parameter.multiline import (
     MultilineStringParameterType,
 )
+from cmem_plugin_base.dataintegration.parameter.password import Password
 from cmem_plugin_base.dataintegration.plugins import WorkflowPlugin
 
 
@@ -139,7 +139,7 @@ class MattermostPlugin(WorkflowPlugin):
     def __init__(
         self,
         url: str,
-        access_token: str,
+        access_token: Password,
         bot_name: str,
         user: str,
         channel: str,
@@ -214,7 +214,7 @@ class MattermostPlugin(WorkflowPlugin):
     def header(self):
         """Request Header"""
         header = {
-            "Authorization": f"Bearer {self.access_token}",
+            "Authorization": f"Bearer {self.access_token.decrypt()}",
             "Content-Type": "application/json",
         }
         return header

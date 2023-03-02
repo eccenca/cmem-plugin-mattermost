@@ -1,11 +1,14 @@
 """Plugin tests."""
 import pytest
 import requests
+from cmem_plugin_base.dataintegration.parameter.password import Password
 
 from cmem_plugin_mattermost.workflow.mattermost_plugin import MattermostPlugin
+from tests.utils import TestSystemContext
 
 pytest_plugins = ["docker_compose"]
-access_token = "ah85ckhk6ib6zqqjh7i7j16hra"
+access_token = Password(encrypted_value="ah85ckhk6ib6zqqjh7i7j16hra",
+                        system=TestSystemContext())
 bot_name = "plugin-test"
 user = "cmempy-developer, user0example, user1@example.com, User Example2, userex3"
 channel = "town-square"
@@ -139,7 +142,7 @@ def test_get_channel_id_error(mattermost_service):
 
 def test_header(mattermost_service):
     result = {
-        "Authorization": f"Bearer {access_token}",
+        "Authorization": f"Bearer {access_token.encrypted_value}",
         "Content-Type": "application/json",
     }
     assert result == {
