@@ -18,7 +18,7 @@ homepage = "https://github.com/eccenca/cmem-plugin-mattermost"
 [tool.poetry.dependencies]
 python = "^3.9"
 responses = "^0.22.0"
-cmem-plugin-base = "^3.0.0"
+cmem-plugin-base = "^2"
 
 [tool.poetry.dev-dependencies]
 pytest = "^7.0"
