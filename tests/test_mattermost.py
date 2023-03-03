@@ -11,7 +11,7 @@ access_token = Password(encrypted_value="ah85ckhk6ib6zqqjh7i7j16hra",
                         system=TestSystemContext())
 bot_name = "plugin-test"
 user = "cmempy-developer"
-channel = "town-square"
+channel = "Town Square"
 message = "test"
 url = "http://localhost:8065"
 
@@ -75,7 +75,7 @@ def test_get_user_id_error(mattermost_service):
 def test_get_channel_id(mattermost_service):
     assert MattermostPlugin(
         mattermost_service, access_token, bot_name, user, channel, message
-    ).get_channel_id() == ["qzzdms4tyb8zzbo5e8b8r56mtc"]
+    ).get_channel_id() == "qzzdms4tyb8zzbo5e8b8r56mtc"
 
 
 def test_get_channel_id_error(mattermost_service):

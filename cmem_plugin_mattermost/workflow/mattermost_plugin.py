@@ -119,7 +119,49 @@ class MattermostSearchUser(StringParameterType):
             return result
         if len(query_terms) == 0:
             value = "Message"
-            label = "Typ a letter to get a list of users."
+            label = "Enter a letter to get a list of users."
+            result.append(Autocompletion(value=value, label=f"{label}"))
+        result.sort(key=lambda x: x.label)  # type: ignore
+        return result
+
+
+class MattermostSearchChannels(StringParameterType):
+    """Mattermost Search Type"""
+
+    autocompletion_depends_on_parameters: list[str] = ["url", "access_token"]
+
+    # auto complete for values
+    allow_only_autocompleted_values: bool = True
+    # auto complete for labels
+    autocomplete_value_with_labels: bool = True
+
+    def autocomplete(
+        self,
+        query_terms: list[str],
+        depend_on_parameter_values: list[Any],
+        context: PluginContext,
+    ) -> list[Autocompletion]:
+        if not depend_on_parameter_values:
+            raise ValueError("Input url and access token first.")
+        result = []
+        if len(query_terms) != 0:
+            datasets = get_dataset(depend_on_parameter_values[0],
+                                   "channels/search",
+                                   depend_on_parameter_values[1],
+                                   query_terms
+                                   )
+            for channel_name in datasets:
+                result.append(
+                    Autocompletion(
+                        value=f"{channel_name['display_name']}",
+                        label=f"{channel_name['display_name']}",
+                    )
+                )
+            result.sort(key=lambda x: x.label)  # type: ignore
+            return result
+        if len(query_terms) == 0:
+            value = "Message"
+            label = "Enter a letter to get a list of channels."
             result.append(Autocompletion(value=value, label=f"{label}"))
         result.sort(key=lambda x: x.label)  # type: ignore
         return result
@@ -174,6 +216,7 @@ user, channel, message is done by an input via entities.
             description="The name or display name"
             " If you want to send your message to multiple"
             " channel separate them with a comma.",
+            param_type=MattermostSearchChannels(),
             default_value="",
         ),
         PluginParameter(
@@ -215,7 +258,7 @@ class MattermostPlugin(WorkflowPlugin):
         if inputs:
             entities_counter = 0
             channel_counter = 0
-            channels = []
+            channels: list = []
             users: list = []
             user_counter = 0
             # Entity/ies
@@ -239,9 +282,8 @@ class MattermostPlugin(WorkflowPlugin):
                             users.extend(self.user)
                         elif _ == "channel":
                             self.channel = param_value
-                            list_channel = format_string_into_list(self.channel)
-                            channels.extend(list_channel)
-                            channel_counter += len(list_channel)
+                            channels.extend(self.channel)
+                            channel_counter += 1
                         elif _ == "message":
                             self.message = param_value
                         i += 1
@@ -327,36 +369,11 @@ class MattermostPlugin(WorkflowPlugin):
             "channels",
             self.access_token
         )
-        list_channel_names_provided = format_string_into_list(self.channel)
-        list_channel_id = []
-        list_channel_names_for_error_handling = []
-        for _ in list_channel_names_provided:
-            channel_name = _.lstrip().rstrip().lower()
-            list_channel_names_for_error_handling.append(channel_name)
-            for _ in list_channel_data:
-                if channel_name in (
-                    _["name"].lower(),
-                    _["display_name"].lower(),
-                ):
-                    list_channel_id.append(_["id"])
-        if len(list_channel_names_provided) == len(list_channel_id):
-            return list_channel_id
-        list_channel_exist = []
-        for channel_id in list_channel_id:
-            for _ in list_channel_data:
-                if channel_id == _["id"]:
-                    list_channel_exist.extend(
-                        [
-                            _["name"].lower(),
-                            _["display_name"].lower(),
-                        ]
-                    )
-        list_diff = [
-            elem
-            for elem in list_channel_names_for_error_handling
-            if elem not in list_channel_exist
-        ]
-        raise ValueError(f"Channel{', '.join(list_diff)} do not exist.")
+        for _ in list_channel_data:
+            if self.channel in _["display_name"]:
+                channel_id = _["id"]
+                return channel_id
+        raise ValueError(f"Channel {self.channel} do not exist.")
 
     def send_message_with_bot_to_channel(self) -> None:
         """sends messages from bot to channel."""
