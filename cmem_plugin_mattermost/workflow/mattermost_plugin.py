@@ -1,7 +1,12 @@
 """A Mattermost integration Plugin"""
-from typing import Sequence
+import os
+from typing import Sequence, Any
 import requests
-from cmem_plugin_base.dataintegration.context import ExecutionContext, ExecutionReport
+from cmem_plugin_base.dataintegration.context import (
+    ExecutionContext,
+    ExecutionReport,
+    PluginContext
+)
 from cmem_plugin_base.dataintegration.description import Plugin, PluginParameter
 from cmem_plugin_base.dataintegration.entity import Entities
 from cmem_plugin_base.dataintegration.parameter.multiline import (
@@ -9,6 +14,115 @@ from cmem_plugin_base.dataintegration.parameter.multiline import (
 )
 from cmem_plugin_base.dataintegration.parameter.password import Password
 from cmem_plugin_base.dataintegration.plugins import WorkflowPlugin
+from cmem_plugin_base.dataintegration.types import Autocompletion, StringParameterType
+
+
+def set_env(url: str, access_token: str):
+    """Set Environment"""
+
+    # Set environment variables
+    os.environ["MATTERMOST_URL"] = url
+    os.environ["MATTERMOST_ACCESS_TOKEN"] = access_token
+
+
+def header(access_token: Password):
+    """Request Header"""
+    api_header = {
+        "Authorization": f"Bearer {access_token.decrypt()}",
+        "Content-Type": "application/json",
+    }
+    return api_header
+
+
+def get_request_handler(url: str,
+                        url_extend: str,
+                        access_token: Password):
+    """Handle get requests"""
+    response = requests.get(
+        f"{url}/api/v4/{url_extend}",
+        headers=header(access_token),
+        timeout=2,
+    )
+    return response
+
+
+def collect_all_pages_from_mattermost_api(url: str,
+                                          url_extend: str,
+                                          access_token: Password):
+    """Collects multiple pages in one list of
+    the Mattermost api when the data is split up."""
+    i = 0
+    user_data_list = []
+    while True:
+        response = get_request_handler(url,
+                                       f"{url_extend}?page={i}&per_page=200",
+                                       access_token
+                                       )
+        i += 1
+        list_user_entities = response.json()
+        if list_user_entities:
+            user_data_list.extend(list_user_entities)
+        else:
+            break
+    return user_data_list
+
+
+def get_dataset(url: str,
+                url_expand: str,
+                access_token: Password,
+                query_terms: list[str]):
+    """create a list of usernames"""
+    term = ""
+    payload = {"term": term.join(query_terms), }
+    response = requests.post(
+        f"{url}/api/v4/{url_expand}",
+        headers=header(access_token),
+        json=payload,
+        timeout=2,
+    )
+    return response.json()
+
+
+class MattermostSearchUser(StringParameterType):
+    """Mattermost Search Type"""
+
+    autocompletion_depends_on_parameters: list[str] = ["url", "access_token"]
+
+    # auto complete for values
+    allow_only_autocompleted_values: bool = True
+    # auto complete for labels
+    autocomplete_value_with_labels: bool = True
+
+    def autocomplete(
+        self,
+        query_terms: list[str],
+        depend_on_parameter_values: list[Any],
+        context: PluginContext,
+    ) -> list[Autocompletion]:
+        if not depend_on_parameter_values:
+            raise ValueError("Input url and access token first.")
+        result = []
+        if len(query_terms) != 0:
+            datasets = get_dataset(depend_on_parameter_values[0],
+                                   "users/search",
+                                   depend_on_parameter_values[1],
+                                   query_terms
+                                   )
+            for username in datasets:
+                result.append(
+                    Autocompletion(
+                        value=f"{username['username']}",
+                        label=f"{username['username']}",
+                    )
+                )
+            result.sort(key=lambda x: x.label)  # type: ignore
+            return result
+        if len(query_terms) == 0:
+            value = "Message"
+            label = "Typ a letter to get a list of users."
+            result.append(Autocompletion(value=value, label=f"{label}"))
+        result.sort(key=lambda x: x.label)  # type: ignore
+        return result
 
 
 @Plugin(
@@ -30,65 +144,6 @@ channel every time the workflow is executed.
 
 For dynamic messages, the input of the parameters
 user, channel, message is done by an input via entities.
-
-<strong>To test the Mattermost plugin:</strong>
-
-1. install cmem-plugin-mattermost
-2. task custom:mattermost:start
-3. docker network connect dockerlocalhost_default docker_mattermost_1
-4. docker network inspect dockerlocalhost_default
-5. for url parameter copy docker_mattermost_1 ip and add ":8065" to ip.
-
-<h3>Mattermost test environment</h3>
-
-<h4>bot-account</h4>
-
-* name: plugin-test
-* access-token: ah85ckhk6ib6zqqjh7i7j16hra
-
-<h4>admin account</h4>
-
-* name: cmempy-developer
-    * password: cmempy-developer
-    * email: cmempy-developer@eccenca.com
-    * user ID : hruniqwds7gg5bcm5fmn931iih
-
-<h4>user accounts</h4>
-
-* name: user0example
-    * password: Password0
-    * email: user0@example.com
-    * user ID : r3qsjphq97fatecdtye9kmeijw
-</br></br>
-* name: user1example
-    * password: Password1
-    * email: user0@example.com
-    * user ID : 36itfo66b7dyxc9x9nec4pssoc
-</br></br>
-* name: user2example
-    * password: Password2
-    * email: user2@example.com
-    * firstname: User
-    * lastname: Eample2
-    * nickname: userex2
-    * user-ID : z85twbta8b8bpe3qaf7n3iecwa
-</br></br>
-* name: user3example
-    * password: Password3
-    * email: user3@example.com
-    * firstname: User
-    * lastname: Eample3
-    * nickname: userex3
-    * user-ID : 3j4wossgfirburd63ftd5mq16c
-
-To make and save custom settings,
-as well as start and close the Docker container,
-the following task commands are available:
-
-* task custom:mattermost:db:dump -> Dump the mattermost database to volume/db.sql
-* task custom:mattermost:db:load -> Load the mattermost database from volume/db.sql
-* task custom:mattermost:start -> Start or restart the mattermost orchestration
-* task custom:mattermost:stop -> Stop the mattermost orchestration
 """,
     parameters=[
         PluginParameter(
@@ -109,10 +164,8 @@ the following task commands are available:
         PluginParameter(
             name="user",
             label="User",
-            description="The full name, username,"
-            " nickname or email."
-            " If you want to send your message to multiple"
-            " user separate them with a comma.",
+            description="user who get the message",
+            param_type=MattermostSearchUser(),
             default_value="",
         ),
         PluginParameter(
@@ -163,7 +216,7 @@ class MattermostPlugin(WorkflowPlugin):
             entities_counter = 0
             channel_counter = 0
             channels = []
-            users = []
+            users: list = []
             user_counter = 0
             # Entity/ies
             for item in inputs:
@@ -182,9 +235,8 @@ class MattermostPlugin(WorkflowPlugin):
                         # Advantage: more self-contained, better structure, ...
                         if _ == "user":
                             self.user = param_value
-                            list_user = format_string_into_list(self.user)
-                            user_counter += len(list_user)
-                            users.extend(list_user)
+                            user_counter += 1
+                            users.extend(self.user)
                         elif _ == "channel":
                             self.channel = param_value
                             list_channel = format_string_into_list(self.channel)
@@ -211,28 +263,11 @@ class MattermostPlugin(WorkflowPlugin):
                 )
             )
 
-    def header(self):
-        """Request Header"""
-        header = {
-            "Authorization": f"Bearer {self.access_token.decrypt()}",
-            "Content-Type": "application/json",
-        }
-        return header
-
-    def get_request_handler(self, url_extend):
-        """Handle get requests"""
-        response = requests.get(
-            f"{self.url}/api/v4/{url_extend}",
-            headers=self.header(),
-            timeout=2,
-        )
-        return response
-
     def post_request_handler(self, url_expand, payload):
         """Handle post requests"""
         response = requests.post(
             f"{self.url}/api/v4/{url_expand}",
-            headers=self.header(),
+            headers=header(self.access_token),
             json=payload,
             timeout=2,
         )
@@ -240,7 +275,7 @@ class MattermostPlugin(WorkflowPlugin):
 
     def get_bot_id(self):
         """Request to find the bot ID with the bot name"""
-        response = self.get_request_handler("bots")
+        response = get_request_handler(self.url, "bots", self.access_token)
         bot_id = ""
         bot_name = self.bot_name
         list_bot_entities = response.json()
@@ -254,67 +289,44 @@ class MattermostPlugin(WorkflowPlugin):
             return bot_id
         raise ValueError("Bot ID not found, check bot_name parameter.")
 
-    def get_user_id_list(self):
+    def get_user_id(self):
         """Request to find the user ID with the username.
         Returns a list of id`s not a string."""
         if not self.user:
             raise ValueError("No user name was provided.")
-        list_user_data = self.collect_all_pages_from_mattermost_api("users")
-        list_usernames_provided = format_string_into_list(self.user)
-        list_user_id = []
-        list_usernames_for_error_handling = []
-        for _ in list_usernames_provided:
-            username = _.lstrip().rstrip().lower()
-            list_usernames_for_error_handling.append(username)
-            for _ in list_user_data:
-                if username in (
-                    _["username"].lower(),
-                    _["email"].lower(),
-                    _["nickname"].lower(),
-                    (_["first_name"].lower() + " " + _["last_name"].lower()),
-                ):
-                    list_user_id.append(_["id"])
-        if len(list_usernames_provided) == len(list_user_id):
-            return list_user_id
-        list_user_exist = []
-        for user_id in list_user_id:
-            for _ in list_user_data:
-                if user_id == _["id"]:
-                    list_user_exist.extend(
-                        [
-                            _["username"].lower(),
-                            _["email"].lower(),
-                            _["nickname"].lower(),
-                            (_["first_name"].lower() + " " + _["last_name"].lower()),
-                        ]
-                    )
-        list_diff = [
-            elem
-            for elem in list_usernames_for_error_handling
-            if elem not in list_user_exist
-        ]
-        raise ValueError(f"User{', '.join(list_diff)} do not exist.")
+        list_user_data = collect_all_pages_from_mattermost_api(
+            self.url,
+            "users",
+            self.access_token)
+        for _ in list_user_data:
+            if self.user in (_["username"]):
+                user_id = _["id"]
+                return user_id
+        raise ValueError(f"User{self.user} do not exist.")
 
     def send_message_with_bot_to_user(self):
         """sends messages from bot to one or more users."""
-        list_user_id = self.get_user_id_list()
+        user_id = self.get_user_id()
         bot_id = self.get_bot_id()
-        for _ in list_user_id:
-            # payload for json to generate a direct channel with post request
-            data = [bot_id, _]
-            # post request to generate the direct channel
-            response = self.post_request_handler("channels/direct", data)
-            channel_id = response.json()["id"]
-            # payload for the json to generate the message
-            payload = {"channel_id": channel_id, "message": self.message}
-            # post request to send the message
-            self.post_request_handler("posts", payload)
+        # payload for json to generate a direct channel with post request
+        data = [bot_id, user_id]
+        # post request to generate the direct channel
+        response = self.post_request_handler("channels/direct", data)
+        channel_id = response.json()["id"]
+        # payload for the json to generate the message
+        payload = {"channel_id": channel_id, "message": self.message}
+        # post request to send the message
+        self.post_request_handler("posts", payload)
 
     def get_channel_id(self):
         """Request to find the channel ID with the bot name"""
         if not self.channel:
             raise ValueError("No channel name was provided.")
-        list_channel_data = self.collect_all_pages_from_mattermost_api("channels")
+        list_channel_data = collect_all_pages_from_mattermost_api(
+            self.url,
+            "channels",
+            self.access_token
+        )
         list_channel_names_provided = format_string_into_list(self.channel)
         list_channel_id = []
         list_channel_names_for_error_handling = []
@@ -367,23 +379,6 @@ class MattermostPlugin(WorkflowPlugin):
                 self.send_message_with_bot_to_channel()
         else:
             raise ValueError("Empty message.")
-
-    def collect_all_pages_from_mattermost_api(self, api_parameter):
-        """Collects multiple pages in one list of
-        the Mattermost api when the data is split up."""
-        i = 0
-        user_data_list = []
-        while True:
-            response = self.get_request_handler(
-                f"{api_parameter}?page={i}&per_page=200"
-            )
-            i += 1
-            list_user_entities = response.json()
-            if list_user_entities:
-                user_data_list.extend(list_user_entities)
-            else:
-                break
-        return user_data_list
 
 
 def format_string_into_list(string_to_formate):
