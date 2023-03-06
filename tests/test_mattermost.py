@@ -1,10 +1,18 @@
 """Plugin tests."""
+import uuid
+
 import pytest
 import requests
+from cmem_plugin_base.dataintegration.entity import (
+    EntitySchema,
+    EntityPath,
+    Entity,
+    Entities
+)
 from cmem_plugin_base.dataintegration.parameter.password import Password
 
-from cmem_plugin_mattermost.workflow.mattermost_plugin import MattermostPlugin, header
-from tests.utils import TestSystemContext
+from cmem_plugin_mattermost.workflow.mattermost_plugin import MattermostPlugin, header, get_dataset
+from tests.utils import TestSystemContext, TestExecutionContext
 
 pytest_plugins = ["docker_compose"]
 access_token = Password(encrypted_value="ah85ckhk6ib6zqqjh7i7j16hra",
@@ -14,6 +22,40 @@ user = "cmempy-developer"
 channel = "Town Square"
 message = "test"
 url = "http://localhost:8065"
+
+SAMPLE_DATA = {
+    "user": f"{str(uuid.uuid4())}",
+    "channel": f"{str(uuid.uuid4())}",
+    "message": f"{str(uuid.uuid4())}",
+}
+
+
+def get_entities() -> Entities:
+    """get entities object with lead columns"""
+    projections = list(SAMPLE_DATA)
+    entities = []
+    entity_uri = f"urn:uuid:{str(uuid.uuid4())}"
+    values = [[SAMPLE_DATA[_]] for _ in projections]
+    entities.append(Entity(uri=entity_uri, values=values))
+    paths = [EntityPath(path=projection) for projection in projections]
+
+    schema = EntitySchema(
+        type_uri="https://example.org/vocab/mattermost",
+        paths=paths,
+    )
+    return Entities(entities=entities, schema=schema)
+
+
+def test_execute(mattermost_service):
+    with pytest.raises(ValueError):
+        MattermostPlugin(
+            mattermost_service,
+            access_token,
+            bot_name,
+            "",
+            "",
+            "",
+        ).execute([get_entities()], TestExecutionContext())
 
 
 def test_execute_with_empty_message_error(mattermost_service):
@@ -125,3 +167,8 @@ def test_send_message_to_provided_parameter(mattermost_service):
     MattermostPlugin(
         mattermost_service, access_token, bot_name, user, "", message
     ).send_message_to_provided_parameter()
+
+
+def test_get_dataset(mattermost_service):
+    result = get_dataset(url, "users/search", access_token, ["cmempy"])
+    assert result[0]["username"] == f"{user}"

@@ -118,9 +118,8 @@ class MattermostSearchUser(StringParameterType):
             result.sort(key=lambda x: x.label)  # type: ignore
             return result
         if len(query_terms) == 0:
-            value = "Message"
             label = "Enter a letter to get a list of users."
-            result.append(Autocompletion(value=value, label=f"{label}"))
+            result.append(Autocompletion(value="", label=f"{label}"))
         result.sort(key=lambda x: x.label)  # type: ignore
         return result
 
@@ -160,9 +159,8 @@ class MattermostSearchChannels(StringParameterType):
             result.sort(key=lambda x: x.label)  # type: ignore
             return result
         if len(query_terms) == 0:
-            value = "Message"
             label = "Enter a letter to get a list of channels."
-            result.append(Autocompletion(value=value, label=f"{label}"))
+            result.append(Autocompletion(value="", label=f"{label}"))
         result.sort(key=lambda x: x.label)  # type: ignore
         return result
 
