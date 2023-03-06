@@ -229,16 +229,17 @@ class MattermostPlugin(WorkflowPlugin):
                         param_value = entity.values[i][0]
                         # TODO: extract to a message class or similar
                         # Advantage: more self-contained, better structure, ...
-                        if _ == "user":
-                            self.user = param_value
-                            user_counter += 1
-                            users.extend(self.user)
-                        elif _ == "channel":
-                            self.channel = param_value
-                            channels.extend(self.channel)
-                            channel_counter += 1
-                        elif _ == "message":
-                            self.message = param_value
+                        match _:
+                            case "user":
+                                self.user = param_value
+                                user_counter += 1
+                                users.extend(self.user)
+                            case "channel":
+                                self.channel = param_value
+                                channels.extend(self.channel)
+                                channel_counter += 1
+                            case "message":
+                                self.message = param_value
                         i += 1
                     self.send_message_to_provided_parameter()
             users = list(dict.fromkeys(users))
