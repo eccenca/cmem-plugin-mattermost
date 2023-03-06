@@ -1,5 +1,4 @@
 """A Mattermost integration Plugin"""
-import os
 from typing import Sequence, Any
 import requests
 from cmem_plugin_base.dataintegration.context import (
@@ -15,14 +14,6 @@ from cmem_plugin_base.dataintegration.parameter.multiline import (
 from cmem_plugin_base.dataintegration.parameter.password import Password
 from cmem_plugin_base.dataintegration.plugins import WorkflowPlugin
 from cmem_plugin_base.dataintegration.types import Autocompletion, StringParameterType
-
-
-def set_env(url: str, access_token: str):
-    """Set Environment"""
-
-    # Set environment variables
-    os.environ["MATTERMOST_URL"] = url
-    os.environ["MATTERMOST_ACCESS_TOKEN"] = access_token
 
 
 def header(access_token: Password):
@@ -83,8 +74,16 @@ def get_dataset(url: str,
     return response.json()
 
 
-class MattermostSearchUser(StringParameterType):
+class MattermostSearch(StringParameterType):
     """Mattermost Search Type"""
+
+    def __init__(
+            self,
+            url_expand: str,
+            display_name: str,
+    ) -> None:
+        self.url_expand = url_expand
+        self.display_name = display_name
 
     autocompletion_depends_on_parameters: list[str] = ["url", "access_token"]
 
@@ -104,62 +103,21 @@ class MattermostSearchUser(StringParameterType):
         result = []
         if len(query_terms) != 0:
             datasets = get_dataset(depend_on_parameter_values[0],
-                                   "users/search",
+                                   f"{self.url_expand}/search",
                                    depend_on_parameter_values[1],
                                    query_terms
                                    )
-            for username in datasets:
+            for object_name in datasets:
                 result.append(
                     Autocompletion(
-                        value=f"{username['username']}",
-                        label=f"{username['username']}",
+                        value=f"{object_name[f'{self.display_name}']}",
+                        label=f"{object_name[f'{self.display_name}']}",
                     )
                 )
             result.sort(key=lambda x: x.label)  # type: ignore
             return result
         if len(query_terms) == 0:
-            label = "Enter a letter to get a list of users."
-            result.append(Autocompletion(value="", label=f"{label}"))
-        result.sort(key=lambda x: x.label)  # type: ignore
-        return result
-
-
-class MattermostSearchChannels(StringParameterType):
-    """Mattermost Search Type"""
-
-    autocompletion_depends_on_parameters: list[str] = ["url", "access_token"]
-
-    # auto complete for values
-    allow_only_autocompleted_values: bool = True
-    # auto complete for labels
-    autocomplete_value_with_labels: bool = True
-
-    def autocomplete(
-        self,
-        query_terms: list[str],
-        depend_on_parameter_values: list[Any],
-        context: PluginContext,
-    ) -> list[Autocompletion]:
-        if not depend_on_parameter_values:
-            raise ValueError("Input url and access token first.")
-        result = []
-        if len(query_terms) != 0:
-            datasets = get_dataset(depend_on_parameter_values[0],
-                                   "channels/search",
-                                   depend_on_parameter_values[1],
-                                   query_terms
-                                   )
-            for channel_name in datasets:
-                result.append(
-                    Autocompletion(
-                        value=f"{channel_name['display_name']}",
-                        label=f"{channel_name['display_name']}",
-                    )
-                )
-            result.sort(key=lambda x: x.label)  # type: ignore
-            return result
-        if len(query_terms) == 0:
-            label = "Enter a letter to get a list of channels."
+            label = f"Enter a letter to get a list of {self.url_expand}."
             result.append(Autocompletion(value="", label=f"{label}"))
         result.sort(key=lambda x: x.label)  # type: ignore
         return result
@@ -205,7 +163,7 @@ user, channel, message is done by an input via entities.
             name="user",
             label="User",
             description="user who get the message",
-            param_type=MattermostSearchUser(),
+            param_type=MattermostSearch("users", "username"),
             default_value="",
         ),
         PluginParameter(
@@ -214,7 +172,7 @@ user, channel, message is done by an input via entities.
             description="The name or display name"
             " If you want to send your message to multiple"
             " channel separate them with a comma.",
-            param_type=MattermostSearchChannels(),
+            param_type=MattermostSearch("channels", "display_name"),
             default_value="",
         ),
         PluginParameter(
@@ -268,10 +226,7 @@ class MattermostPlugin(WorkflowPlugin):
                     i = 0
                     # row of given Entity
                     for _ in column_names:
-                        if len(entity.values[i]) > 0:
-                            param_value = entity.values[i][0]
-                        else:
-                            param_value = ""
+                        param_value = entity.values[i][0]
                         # TODO: extract to a message class or similar
                         # Advantage: more self-contained, better structure, ...
                         if _ == "user":
@@ -394,10 +349,3 @@ class MattermostPlugin(WorkflowPlugin):
                 self.send_message_with_bot_to_channel()
         else:
             raise ValueError("Empty message.")
-
-
-def format_string_into_list(string_to_formate):
-    """Formate a string to List with using a comma as seperator
-    and removing empty values."""
-    result = list(filter(None, string_to_formate.split(sep=",")))
-    return result
