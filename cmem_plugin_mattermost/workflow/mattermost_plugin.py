@@ -225,7 +225,7 @@ class MattermostPlugin(WorkflowPlugin):
             context.report.update(
                 ExecutionReport(
                     entity_count=entities_counter,
-                    operation="wait",
+                    operation="write",
                     operation_desc="entities received",
                     summary=[
                         ("No. of messages send:", f"{user_counter + channel_counter}"),
