@@ -37,36 +37,15 @@ def get_request_handler(url: str,
     return response
 
 
-def collect_all_pages_from_mattermost_api(url: str,
-                                          url_extend: str,
-                                          access_token: Password):
-    """Collects multiple pages in one list of
-    the Mattermost api when the data is split up."""
-    i = 0
-    user_data_list = []
-    while True:
-        response = get_request_handler(url,
-                                       f"{url_extend}?page={i}&per_page=200",
-                                       access_token
-                                       )
-        i += 1
-        list_user_entities = response.json()
-        if list_user_entities:
-            user_data_list.extend(list_user_entities)
-        else:
-            break
-    return user_data_list
-
-
 def get_dataset(url: str,
                 url_expand: str,
                 access_token: Password,
-                query_terms: list[str]):
+                query_terms: list[str]) -> Any:
     """create a list of usernames"""
     term = ""
     payload = {"term": term.join(query_terms), }
     response = requests.post(
-        f"{url}/api/v4/{url_expand}",
+        f"{url}/api/v4/{url_expand}/search",
         headers=header(access_token),
         json=payload,
         timeout=2,
@@ -103,15 +82,15 @@ class MattermostSearch(StringParameterType):
         result = []
         if len(query_terms) != 0:
             datasets = get_dataset(depend_on_parameter_values[0],
-                                   f"{self.url_expand}/search",
+                                   self.url_expand,
                                    depend_on_parameter_values[1],
                                    query_terms
                                    )
             for object_name in datasets:
                 result.append(
                     Autocompletion(
-                        value=f"{object_name[f'{self.display_name}']}",
-                        label=f"{object_name[f'{self.display_name}']}",
+                        value=f"{object_name[self.display_name]}",
+                        label=f"{object_name[self.display_name]}",
                     )
                 )
             result.sort(key=lambda x: x.label)  # type: ignore
@@ -229,17 +208,16 @@ class MattermostPlugin(WorkflowPlugin):
                         param_value = entity.values[i][0]
                         # TODO: extract to a message class or similar
                         # Advantage: more self-contained, better structure, ...
-                        match _:
-                            case "user":
-                                self.user = param_value
-                                user_counter += 1
-                                users.extend(self.user)
-                            case "channel":
-                                self.channel = param_value
-                                channels.extend(self.channel)
-                                channel_counter += 1
-                            case "message":
-                                self.message = param_value
+                        if _ == "user":
+                            self.user = param_value
+                            user_counter += 1
+                            users.extend(self.user)
+                        elif _ == "channel":
+                            self.channel = param_value
+                            channels.extend(self.channel)
+                            channel_counter += 1
+                        elif _ == "message":
+                            self.message = param_value
                         i += 1
                     self.send_message_to_provided_parameter()
             users = list(dict.fromkeys(users))
@@ -269,43 +247,18 @@ class MattermostPlugin(WorkflowPlugin):
         )
         return response
 
-    def get_bot_id(self):
-        """Request to find the bot ID with the bot name"""
-        response = get_request_handler(self.url, "bots", self.access_token)
-        bot_id = ""
-        bot_name = self.bot_name
-        list_bot_entities = response.json()
-        for _ in list_bot_entities:
-            if bot_name in (
-                _["username"],
-                _["display_name"],
-            ):
-                bot_id = _["user_id"]
-        if bot_id != "":
-            return bot_id
-        raise ValueError("Bot ID not found, check bot_name parameter.")
-
-    def get_user_id(self):
-        """Request to find the user ID with the username.
-        Returns a list of id`s not a string."""
-        if not self.user:
-            raise ValueError("No user name was provided.")
-        list_user_data = collect_all_pages_from_mattermost_api(
-            self.url,
-            "users",
-            self.access_token)
-        for _ in list_user_data:
-            if self.user in (_["username"]):
-                user_id = _["id"]
-                return user_id
-        raise ValueError(f"User{self.user} do not exist.")
+    def get_id(self, obj_name):
+        """Request to find the ID"""
+        response = get_dataset(self.url, "users", self.access_token, [obj_name])
+        for _ in response:
+            if obj_name in _["username"]:
+                return _["id"]
+        raise ValueError(f"ID not found, check {obj_name} parameter.")
 
     def send_message_with_bot_to_user(self):
         """sends messages from bot to one or more users."""
-        user_id = self.get_user_id()
-        bot_id = self.get_bot_id()
         # payload for json to generate a direct channel with post request
-        data = [bot_id, user_id]
+        data = [self.get_id(self.bot_name), self.get_id(self.user)]
         # post request to generate the direct channel
         response = self.post_request_handler("channels/direct", data)
         channel_id = response.json()["id"]
@@ -314,19 +267,32 @@ class MattermostPlugin(WorkflowPlugin):
         # post request to send the message
         self.post_request_handler("posts", payload)
 
+    def collect_channel_list(self):
+        """Collects multiple pages in one list of
+        the Mattermost api when the data is split up."""
+        i = 0
+        data_list = []
+        while True:
+            response = get_request_handler(self.url,
+                                           f"channels?page={i}&per_page=200",
+                                           self.access_token
+                                           )
+            i += 1
+            list_entities = response.json()
+            if list_entities:
+                data_list.extend(list_entities)
+            else:
+                break
+        return data_list
+
     def get_channel_id(self):
         """Request to find the channel ID with the bot name"""
         if not self.channel:
             raise ValueError("No channel name was provided.")
-        list_channel_data = collect_all_pages_from_mattermost_api(
-            self.url,
-            "channels",
-            self.access_token
-        )
+        list_channel_data = self.collect_channel_list()
         for _ in list_channel_data:
             if self.channel in _["display_name"]:
-                channel_id = _["id"]
-                return channel_id
+                return _["id"]
         raise ValueError(f"Channel {self.channel} do not exist.")
 
     def send_message_with_bot_to_channel(self) -> None:
@@ -349,4 +315,4 @@ class MattermostPlugin(WorkflowPlugin):
             elif self.channel and not self.user:
                 self.send_message_with_bot_to_channel()
         else:
-            raise ValueError("Empty message.")
+            raise ValueError("No recipient.")

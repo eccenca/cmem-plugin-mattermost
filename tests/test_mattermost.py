@@ -129,20 +129,15 @@ def test_send_message_with_bot_to_channel_error(mattermost_service):
 def test_get_user_id(mattermost_service):
     assert MattermostPlugin(
         mattermost_service, access_token, bot_name, user, channel, message
-    ).get_user_id() == "hruniqwds7gg5bcm5fmn931iih"
+    ).get_id(user) == "hruniqwds7gg5bcm5fmn931iih"
 
 
 def test_get_user_id_error(mattermost_service):
     with pytest.raises(ValueError):
-        user_empty = ""
-        MattermostPlugin(
-            mattermost_service, access_token, bot_name, user_empty, channel, message
-        ).get_user_id()
-    with pytest.raises(ValueError):
         user_empty = "wrong_user"
         MattermostPlugin(
             mattermost_service, access_token, bot_name, user_empty, channel, message
-        ).get_user_id()
+        ).get_id(user_empty)
 
 
 def test_get_channel_id(mattermost_service):
@@ -164,7 +159,7 @@ def test_get_bot_id_error(mattermost_service):
         bot_name_wrong = "wrong_bot"
         MattermostPlugin(
             mattermost_service, access_token, bot_name_wrong, user, channel, message
-        ).get_bot_id()
+        ).get_id(bot_name_wrong)
 
 
 def test_header():
@@ -214,7 +209,7 @@ def test_send_message_to_provided_parameter(mattermost_service):
 
 
 def test_get_dataset(mattermost_service):
-    result = get_dataset(url, "users/search", access_token, ["cmempy"])
+    result = get_dataset(url, "users", access_token, [user])
     assert result[0]["username"] == f"{user}"
 
 
