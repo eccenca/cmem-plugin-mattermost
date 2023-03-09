@@ -28,19 +28,25 @@ channel = "Town Square"
 message = "test"
 url = "http://localhost:8065"
 
-SAMPLE_DATA = {
-    "user": f"{user}",
-    "channel": f"{channel}",
-    "message": f"{message}",
+sample_data_full = {
+    "user": user,
+    "channel": channel,
+    "message": message,
+}
+
+sample_data_empty = {
+    "user": "",
+    "channel": "",
+    "message": "",
 }
 
 
-def get_entities(data) -> Entities:
+def get_entities(sample_data) -> Entities:
     """get entities object with lead columns"""
-    projections = list(data)
+    projections = list(sample_data)
     entities = []
     entity_uri = f"urn:uuid:{str(uuid.uuid4())}"
-    values = [[data[_]] for _ in projections]
+    values = [[sample_data[_]] for _ in projections]
     entities.append(Entity(uri=entity_uri, values=values))
     paths = [EntityPath(path=projection) for projection in projections]
 
@@ -59,7 +65,19 @@ def test_execute_with_inputs_and_static(mattermost_service):
         user,
         "",
         message,
-    ).execute([get_entities(SAMPLE_DATA)], TestExecutionContext())
+    ).execute([get_entities(sample_data_full)], TestExecutionContext())
+
+
+def test_execute_error(mattermost_service):
+    with pytest.raises(ValueError):
+        MattermostPlugin(
+            mattermost_service,
+            access_token,
+            bot_name,
+            "",
+            "",
+            "",
+        ).execute([get_entities(sample_data_empty)], TestExecutionContext())
 
 
 def test_execute_with_inputs_only(mattermost_service):
@@ -70,7 +88,7 @@ def test_execute_with_inputs_only(mattermost_service):
         "",
         "",
         "",
-    ).execute([get_entities(SAMPLE_DATA)], TestExecutionContext())
+    ).execute([get_entities(sample_data_full)], TestExecutionContext())
 
 
 def test_execute_with_no_inputs(mattermost_service):
@@ -134,9 +152,14 @@ def test_get_user_id(mattermost_service):
 
 def test_get_user_id_error(mattermost_service):
     with pytest.raises(ValueError):
-        user_empty = "wrong_user"
+        user_empty = ""
         MattermostPlugin(
             mattermost_service, access_token, bot_name, user_empty, channel, message
+        ).get_id(user_empty)
+
+        user_wrong = "wrong_user"
+        MattermostPlugin(
+            mattermost_service, access_token, bot_name, user_wrong, channel, message
         ).get_id(user_empty)
 
 
@@ -176,9 +199,7 @@ def test_header():
 def test_get_request_handler_users_is_ok(mattermost_service):
     result = requests.get(
         f"{url}/api/v4/users",
-        headers=header(
-            access_token
-            ),
+        headers=header(access_token),
         timeout=2,
     )
     assert result.ok

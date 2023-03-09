@@ -151,7 +151,7 @@ user, channel, message is done by an input via entities.
             description="The name or display name"
             " If you want to send your message to multiple"
             " channel separate them with a comma.",
-            param_type=MattermostSearch("channels", "display_name"),
+            param_type=MattermostSearch("channels", "name"),
             default_value="",
         ),
         PluginParameter(
@@ -202,21 +202,25 @@ class MattermostPlugin(WorkflowPlugin):
                 # columns of given Entity
                 for entity in item.entities:
                     entities_counter += 1
+                    self.user = ""
+                    self.channel = ""
+                    self.message = ""
                     i = 0
                     # row of given Entity
                     for _ in column_names:
-                        param_value = entity.values[i][0]
-                        # TODO: extract to a message class or similar
-                        # Advantage: more self-contained, better structure, ...
-                        if _ == "user":
+                        if len(entity.values[i]) > 0:
+                            param_value = entity.values[i][0]
+                        else:
+                            param_value = ""
+                        if _ == "user" and param_value != "":
                             self.user = param_value
                             user_counter += 1
-                            users.extend(self.user)
-                        elif _ == "channel":
+                            users.append(self.user)
+                        elif _ == "channel" and param_value != "":
                             self.channel = param_value
-                            channels.extend(self.channel)
+                            channels.append(self.channel)
                             channel_counter += 1
-                        elif _ == "message":
+                        elif _ == "message" and param_value != "":
                             self.message = param_value
                         i += 1
                     self.send_message_to_provided_parameter()
@@ -228,7 +232,7 @@ class MattermostPlugin(WorkflowPlugin):
                     operation="write",
                     operation_desc="entities received",
                     summary=[
-                        ("No. of messages send:", f"{user_counter + channel_counter}"),
+                        ("No. of messages send:", f"{entities_counter}"),
                         ("No. of direct messages", f"{user_counter}"),
                         ("No. of channel messages", f"{channel_counter}"),
                         ("Channels that received a message", f"{', '.join(channels)}"),
@@ -249,10 +253,15 @@ class MattermostPlugin(WorkflowPlugin):
 
     def get_id(self, obj_name):
         """Request to find the ID"""
-        response = get_dataset(self.url, "users", self.access_token, [obj_name])
-        for _ in response:
-            if obj_name in _["username"]:
-                return _["id"]
+        if obj_name:
+            response = get_dataset(self.url, "users", self.access_token, [obj_name])
+            for _ in response:
+                if obj_name in (_["username"],
+                                _["nickname"],
+                                _["email"],
+                                f'{_["first_name"]} {_["last_name"]}'
+                                ):
+                    return _["id"]
         raise ValueError(f"ID not found, check {obj_name} parameter.")
 
     def send_message_with_bot_to_user(self):
@@ -267,42 +276,26 @@ class MattermostPlugin(WorkflowPlugin):
         # post request to send the message
         self.post_request_handler("posts", payload)
 
-    def collect_channel_list(self):
-        """Collects multiple pages in one list of
-        the Mattermost api when the data is split up."""
-        i = 0
-        data_list = []
-        while True:
-            response = get_request_handler(self.url,
-                                           f"channels?page={i}&per_page=200",
-                                           self.access_token
-                                           )
-            i += 1
-            list_entities = response.json()
-            if list_entities:
-                data_list.extend(list_entities)
-            else:
-                break
-        return data_list
-
     def get_channel_id(self):
         """Request to find the channel ID with the bot name"""
         if not self.channel:
             raise ValueError("No channel name was provided.")
-        list_channel_data = self.collect_channel_list()
+        list_channel_data = get_dataset(self.url,
+                                        "channels",
+                                        self.access_token,
+                                        [self.channel])
         for _ in list_channel_data:
-            if self.channel in _["display_name"]:
+            if self.channel in (_["name"], _["display_name"]):
                 return _["id"]
         raise ValueError(f"Channel {self.channel} do not exist.")
 
     def send_message_with_bot_to_channel(self) -> None:
         """sends messages from bot to channel."""
-        list_channel_id = self.get_channel_id()
-        for _ in list_channel_id:
-            # payload for the json to generate the message
-            payload = {"channel_id": _, "message": self.message}
-            # Post request for the message
-            self.post_request_handler("posts", payload)
+        # payload for the json to generate the message
+        payload = {"channel_id": self.get_channel_id(),
+                   "message": self.message}
+        # Post request for the message
+        self.post_request_handler("posts", payload)
 
     def send_message_to_provided_parameter(self) -> None:
         """will test if the message is sending to user or channel or both"""
