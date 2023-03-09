@@ -17,7 +17,10 @@ from cmem_plugin_mattermost.workflow.mattermost_plugin import (
     get_dataset,
     MattermostSearch
 )
-from tests.utils import TestSystemContext, TestExecutionContext, TestPluginContext, needs_cmem
+from tests.utils import (TestSystemContext,
+                         TestExecutionContext,
+                         TestPluginContext,
+                         needs_cmem)
 
 pytest_plugins = ["docker_compose"]
 access_token = Password(encrypted_value="ah85ckhk6ib6zqqjh7i7j16hra",

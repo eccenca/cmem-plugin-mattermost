@@ -35,8 +35,6 @@ mypy = "^1.0.0"
 coverage = "^7.1.0"
 defusedxml = "^0.7.1"
 wheel = "^0.38.3"
-
-[tool.poetry.group.dev.dependencies]
 types-requests = "^2.28.11.8"
 pytest-docker-compose = "^3.2.1"
 
