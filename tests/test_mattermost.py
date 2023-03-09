@@ -17,7 +17,7 @@ from cmem_plugin_mattermost.workflow.mattermost_plugin import (
     get_dataset,
     MattermostSearch
 )
-from tests.utils import TestSystemContext, TestExecutionContext, TestPluginContext
+from tests.utils import TestSystemContext, TestExecutionContext, TestPluginContext, needs_cmem
 
 pytest_plugins = ["docker_compose"]
 access_token = Password(encrypted_value="ah85ckhk6ib6zqqjh7i7j16hra",
@@ -57,6 +57,7 @@ def get_entities(sample_data) -> Entities:
     return Entities(entities=entities, schema=schema)
 
 
+@needs_cmem
 def test_execute_with_inputs_and_static(mattermost_service):
     MattermostPlugin(
         mattermost_service,
@@ -80,6 +81,7 @@ def test_execute_error(mattermost_service):
         ).execute([get_entities(sample_data_empty)], TestExecutionContext())
 
 
+@needs_cmem
 def test_execute_with_inputs_only(mattermost_service):
     MattermostPlugin(
         mattermost_service,
@@ -91,6 +93,7 @@ def test_execute_with_inputs_only(mattermost_service):
     ).execute([get_entities(sample_data_full)], TestExecutionContext())
 
 
+@needs_cmem
 def test_execute_with_no_inputs(mattermost_service):
     MattermostPlugin(
         mattermost_service,
@@ -234,6 +237,7 @@ def test_get_dataset(mattermost_service):
     assert result[0]["username"] == f"{user}"
 
 
+@needs_cmem
 def test_autocomplete_error():
     with pytest.raises(ValueError):
         MattermostSearch("users", "username").autocomplete(
