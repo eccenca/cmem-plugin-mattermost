@@ -240,7 +240,6 @@ def test_get_dataset(mattermost_service):
     assert result[0]["username"] == f"{user}"
 
 
-@needs_cmem
 def test_autocomplete_error():
     with pytest.raises(ValueError):
         MattermostSearch("users", "username").autocomplete(
@@ -250,6 +249,7 @@ def test_autocomplete_error():
         )
 
 
+@needs_cmem
 def test_autocomplete():
     MattermostSearch("users", "username").autocomplete(
         query_terms=["cmem"],
