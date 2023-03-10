@@ -2,7 +2,6 @@
 import uuid
 
 import pytest
-import requests
 from cmem_plugin_base.dataintegration.entity import (
     EntitySchema,
     EntityPath,
@@ -15,12 +14,11 @@ from cmem_plugin_mattermost.workflow.mattermost_plugin import (
     MattermostPlugin,
     header,
     get_dataset,
-    MattermostSearch
+    MattermostSearch, get_request_handler
 )
 from tests.utils import (TestSystemContext,
                          TestExecutionContext,
-                         TestPluginContext,
-                         needs_cmem)
+                         TestPluginContext, needs_cmem, )
 
 pytest_plugins = ["docker_compose"]
 access_token = Password(encrypted_value="ah85ckhk6ib6zqqjh7i7j16hra",
@@ -192,22 +190,15 @@ def test_get_bot_id_error(mattermost_service):
 
 
 def test_header():
-    result = {
-        "Authorization": f"Bearer {access_token.encrypted_value}",
-        "Content-Type": "application/json",
-    }
+    result = header(access_token)
     assert result == {
-        "Authorization": "Bearer ah85ckhk6ib6zqqjh7i7j16hra",
+        "Authorization": f"Bearer {access_token.decrypt()}",
         "Content-Type": "application/json",
     }
 
 
-def test_get_request_handler_users_is_ok(mattermost_service):
-    result = requests.get(
-        f"{url}/api/v4/users",
-        headers=header(access_token),
-        timeout=2,
-    )
+def test_get_request_handler(mattermost_service):
+    result = get_request_handler(url, "users", access_token)
     assert result.ok
 
 
@@ -240,6 +231,7 @@ def test_get_dataset(mattermost_service):
     assert result[0]["username"] == f"{user}"
 
 
+@needs_cmem
 def test_autocomplete_error():
     with pytest.raises(ValueError):
         MattermostSearch("users", "username").autocomplete(
