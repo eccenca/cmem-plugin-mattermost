@@ -12,7 +12,7 @@ Send messages to Mattermost channels and users.
 
 ## Plugin Usage
 
-This plugin allows sending messages, to channels or/and users via a defined bot, in Mattermost.
+This plugin allows sending messages, to channels or/and users via a defined [bot](https://developers.mattermost.com/integrate/reference/bot-accounts/), in [Mattermost](https://mattermost.com/).
 
 The plugin can be used as a workflow plugin. For execution, it needs the url of the own mattermost server, an access token and the display name or name of the bot that should send the messages.
 
