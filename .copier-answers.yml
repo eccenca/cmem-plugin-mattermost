@@ -6,5 +6,5 @@ author_name: Hannes Hartmann
 github_page: https://github.com/eccenca/cmem-plugin-mattermost
 project_description: Send messages to Mattermost channels and users.
 project_slug: mattermost
-pypi: true
+pypi: https://pypi.org/project/cmem-plugin-mattermost
 
