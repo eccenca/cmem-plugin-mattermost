@@ -1,17 +1,19 @@
 [tool.poetry]
 name = "cmem-plugin-mattermost"
-version = "0.0.0.post2.dev0+1dd9a52.dirty"
+version = "0.0.0"
 license = "Apache-2.0"
 description = "Send messages to Mattermost channels and users."
-authors = ["Hannes Hartmann <hannes.hartmann@eccenca.com>"]
+authors = ["eccenca GmbH <cmempy-developer@eccenca.com>"]
 classifiers = [
-    "Development Status :: 4 - Beta",
+    "Development Status :: 5 - Production/Stable",
     "Environment :: Plugins",
-    "Topic :: Software Development :: Libraries :: Python Modules"
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Intended Audience :: Information Technology",
+    "License :: OSI Approved :: Apache Software License",
 ]
 readme = "README-public.md"
 keywords = [
-    "eccenca Corporate Memory", "plugin"
+    "eccenca Corporate Memory", "plugin", "mattermost"
 ]
 homepage = "https://github.com/eccenca/cmem-plugin-mattermost"
 
