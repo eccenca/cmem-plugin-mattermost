@@ -1,10 +1,10 @@
 # Changes here will be overwritten by Copier
-_commit: v3.6.2
+_commit: v5.0.2
 _src_path: gh:eccenca/cmem-plugin-template
 author_mail: hannes.hartmann@eccenca.com
 author_name: Hannes Hartmann
 github_page: https://github.com/eccenca/cmem-plugin-mattermost
 project_description: Send messages to Mattermost channels and users.
 project_slug: mattermost
-pypi: https://pypi.org/project/cmem-plugin-mattermost
+pypi: true
 
