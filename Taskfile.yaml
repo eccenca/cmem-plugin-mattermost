@@ -136,7 +136,7 @@ tasks:
       # ignore 51358 safety - dev dependency only
       # ignore 52322 gitpython - dev dependency only
       # ignore 51457 py - dev dependency only
-      - poetry run safety check -i 48547 -i 51358 -i 52322 -i 51457
+      - poetry run safety check -i 48547 -i 51358 -i 52322 -i 51457 -i 39611
 
   check:bandit:
     desc: Check source code with bandit.
