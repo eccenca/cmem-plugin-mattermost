@@ -3,7 +3,7 @@ version: "3"
 
 services:
   mattermost:
-    image: 'mattermost/mattermost-preview'
+    image: 'mattermost/mattermost-preview:7.10.1'
     ports:
       - '8065:8065'
     volumes:
