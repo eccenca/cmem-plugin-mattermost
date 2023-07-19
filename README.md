@@ -2,7 +2,7 @@
 
 Send messages to [Mattermost](https://mattermost.com/) channels and users.
 
-[![eccenca Corporate Memory](https://img.shields.io/badge/eccenca-Corporate%20Memory-orange)](https://documentation.eccenca.com) [![workflow](https://github.com/eccenca/cmem-plugin-mattermost/actions/workflows/check.yml/badge.svg)](https://github.com/eccenca/cmem-plugin-mattermost/actions) [![pypi version](https://img.shields.io/pypi/v/cmem-plugin-mattermost)](https://pypi.org/project/mattermost) [![license](https://img.shields.io/pypi/l/cmem-plugin-mattermost)](https://pypi.org/project/cmem-plugin-mattermost)
+[![eccenca Corporate Memory](https://img.shields.io/badge/eccenca-Corporate%20Memory-orange)](https://documentation.eccenca.com) [![workflow](https://github.com/eccenca/cmem-plugin-mattermost/actions/workflows/check.yml/badge.svg)](https://github.com/eccenca/cmem-plugin-mattermost/actions) [![pypi version](https://img.shields.io/pypi/v/cmem-plugin-mattermost)](https://pypi.org/project/cmem-plugin-mattermost) [![license](https://img.shields.io/pypi/l/cmem-plugin-mattermost)](https://pypi.org/project/cmem-plugin-mattermost)
 
 ## Development
 
