@@ -6,14 +6,19 @@ from cmem_plugin_base.dataintegration.context import (
     ExecutionReport,
     PluginContext
 )
-from cmem_plugin_base.dataintegration.description import Plugin, PluginParameter
-from cmem_plugin_base.dataintegration.entity import Entities
+from cmem_plugin_base.dataintegration.description import Plugin, PluginParameter, Icon
+from cmem_plugin_base.dataintegration.entity import Entities, EntitySchema, EntityPath
 from cmem_plugin_base.dataintegration.parameter.multiline import (
     MultilineStringParameterType,
 )
 from cmem_plugin_base.dataintegration.parameter.password import Password
 from cmem_plugin_base.dataintegration.plugins import WorkflowPlugin
+from cmem_plugin_base.dataintegration.ports import FixedNumberOfInputs, FixedSchemaPort
 from cmem_plugin_base.dataintegration.types import Autocompletion, StringParameterType
+
+DEV_PAGE = "https://developers.mattermost.com"
+BOTS_DOCU = f"{DEV_PAGE}/integrate/reference/bot-accounts/"
+TOKEN_DOCU = f"{DEV_PAGE}/integrate/reference/personal-access-token/"
 
 
 def header(access_token: Password):
@@ -103,70 +108,87 @@ class MattermostSearch(StringParameterType):
 
 
 @Plugin(
-    label="Mattermost Plugin",
+    label="Send Mattermost messages",
     plugin_id="cmem_plugin_mattermost",
-    description="Sends automated messages in Mattermost"
-    " via bot to channels or direct to users ",
-    documentation="""This Plugin sends messages via
-    Mattermost bot to channel(s) or user(s).
+    icon=Icon(file_name="mattermost.svg", package=__package__),
+    description="Send messages to Mattermost channels and/or users.",
+    documentation=f"""This task sends messages to Mattermost channels and users.
 
-The plugin can send messages to users and/or channels
-on your Mattermost server through your preset bot.
+You need a bot account in order to connect to Mattermost.
+Learn more on bot accounts at
+[developers.mattermost.com]({DEV_PAGE}):
 
-<h2>Workflow mode</h2>
+- [Using bot accounts]({BOTS_DOCU})
+- [Personal access tokens]({TOKEN_DOCU})
 
-The plugin can send a static message to the pre-configured parameters.
-This message will be sent to the defined user and/or
-channel every time the workflow is executed.
+The task has two working modes.
 
-For dynamic messages, the input of the parameters
-user, channel, message is done by an input via entities.
+# Single Message
+
+You can send a single static message to a pre-configured channel or user.
+Just configure the User and/or Channel and Message parameters to do so.
+
+# Multiple Messages
+
+You can send multiple messages to different channels or users by piping data into
+the task. For each entity, a message is send. For dynamic messages the following
+input paths are recognized:
+
+- user
+- channel
+- message
 """,
     parameters=[
         PluginParameter(
             name="url",
             label="URL",
-            description="url of mattermost server.",
-        ),
-        PluginParameter(
-            name="access_token",
-            label="Access Token",
-            description="access token of the bot",
+            description="The base URL of your Mattermost deployment. "
+                        "Example: https://mattermost.example.org",
         ),
         PluginParameter(
             name="bot_name",
             label="Bot name",
-            description="name or display name",
+            description="The name or display name of the bot you want to use to"
+                        " connect."
+        ),
+        PluginParameter(
+            name="access_token",
+            label="Access Token",
+            description="The Personal Access Token of the bot account.",
         ),
         PluginParameter(
             name="user",
             label="User",
-            description="user who get the message",
+            description="""The user account which will receive the message.
+
+You can search for users if the connection was successful (Base URl, bot + token).""",
             param_type=MattermostSearch("users", "username"),
             default_value="",
         ),
         PluginParameter(
             name="channel",
             label="Channel",
-            description="The name or display name"
-            " If you want to send your message to multiple"
-            " channel separate them with a comma.",
+            description="""The channel which will receive the message.
+
+You can search for channels if the connection was successful (Base URl, bot + token).
+If you want to send your message to multiple channels, separate them with a comma.""",
             param_type=MattermostSearch("channels", "name"),
             default_value="",
         ),
         PluginParameter(
             name="message",
             label="Message",
-            description="max 16383 character",
+            description="The message size is limited to a configured maximum"
+                        " (e.g. 16383 characters).",
             param_type=MultilineStringParameterType(),
             default_value="",
         ),
     ],
 )
 class MattermostPlugin(WorkflowPlugin):
-    """A Mattermost integration Plugin with static messaging"""
+    """Send messages to Mattermost channels and users."""
 
-    # pylint: disable=R0913
+    # pylint: disable=R0902,R0913
     def __init__(
         self,
         url: str,
@@ -182,6 +204,19 @@ class MattermostPlugin(WorkflowPlugin):
         self.user = user
         self.channel = channel
         self.message = message
+
+        self.schema = EntitySchema(
+            type_uri="urn:x-mattermost:Message",
+            paths=[
+                EntityPath(path="user"),
+                EntityPath(path="channel"),
+                EntityPath(path="message"),
+            ],
+        )
+
+        # Input and output ports
+        self.input_ports = FixedNumberOfInputs([FixedSchemaPort(self.schema)])
+        self.output_port = None
 
     def execute(self, inputs: Sequence[Entities], context: ExecutionContext) -> None:
         self.log.info("Mattermost plugin started.")
