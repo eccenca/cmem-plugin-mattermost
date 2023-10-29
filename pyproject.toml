@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "cmem-plugin-mattermost"
-version = "0.0.0"
+version = "2.0.0.post4.dev0+cf17da4.dirty"
 license = "Apache-2.0"
 description = "Send messages to Mattermost channels and users."
 authors = ["eccenca GmbH <cmempy-developer@eccenca.com>"]
@@ -18,9 +18,13 @@ keywords = [
 homepage = "https://github.com/eccenca/cmem-plugin-mattermost"
 
 [tool.poetry.dependencies]
+# if you need to change python version here, change it also in .python-version
 python = "^3.11"
-cmem-plugin-base = "^4.0.0"
 responses = "^0.23.1"
+
+[tool.poetry.dependencies.cmem-plugin-base]
+version = "^4.3.0"
+allow-prereleases = false
 
 [tool.poetry.group.dev.dependencies]
 bandit = "^1.7.5"
@@ -28,13 +32,16 @@ black = "^23.3.0"
 coverage = "^7.2.3"
 defusedxml = "^0.7.1"
 flake8-formatter-junit-xml = "^0.0.6"
+# https://github.com/smarie/python-genbadge/issues/31
+pillow = "^9.5.0"
 genbadge = "^1.1.0"
 mypy = "^1.2.0"
-pillow = "^9.5.0"
+# https://github.com/rasjani/pylint-junit/issues/1
+pylint = "^2"
 pylint-junit = "^0.3.2"
 pytest = "^7.3.1"
 pytest-cov = "^4.0.0"
-pytest-memray = "^1.4.0"
+pytest-memray = { version = "^1.4.0",  markers = "platform_system != 'Windows'" }
 safety = "^1.10.3"
 typed-ast = "^1.5.4"
 wheel = "^0.38.4"
@@ -42,7 +49,7 @@ types-requests = "^2.28.11.8"
 pytest-docker-compose = "^3.2.1"
 # Downgrade pyyaml to resolve reported in 
 # https://github.com/yaml/pyyaml/issues/724
-pyyaml= "==5.3.1"
+pyyaml = "==5.3.1"
 
 [build-system]
 requires = ["poetry-core>=1.0.0", "poetry-dynamic-versioning"]

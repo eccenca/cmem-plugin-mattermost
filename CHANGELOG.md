@@ -6,7 +6,16 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ## [Unreleased]
 
-TODO: add at least one Added, Changed, Deprecated, Removed, Fixed or Security section
+### Added
+
+- custom icon
+- port specification
+- better documentation
+
+### Changed
+
+- upgrade template to 5.3 (CMEM >= 23.3, cmem-plugin-base 4.3.0)
+
 
 ## [2.0.0] 2023-07-17
 
@@ -14,6 +23,7 @@ TODO: add at least one Added, Changed, Deprecated, Removed, Fixed or Security se
 
 - upgrade template to 5.0.2 (python 3.11, CMEM 23.2, cmem-plugin-base 4)
 - dependency updates
+
 
 ## [1.0.0] 2023-03-13
 
