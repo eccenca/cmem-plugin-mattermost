@@ -1,13 +1,15 @@
 """A Mattermost integration Plugin"""
-from typing import Sequence, Any
+from collections.abc import Sequence
+from typing import Any
+
 import requests
 from cmem_plugin_base.dataintegration.context import (
     ExecutionContext,
     ExecutionReport,
-    PluginContext
+    PluginContext,
 )
-from cmem_plugin_base.dataintegration.description import Plugin, PluginParameter, Icon
-from cmem_plugin_base.dataintegration.entity import Entities, EntitySchema, EntityPath
+from cmem_plugin_base.dataintegration.description import Icon, Plugin, PluginParameter
+from cmem_plugin_base.dataintegration.entity import Entities, EntityPath, EntitySchema
 from cmem_plugin_base.dataintegration.parameter.multiline import (
     MultilineStringParameterType,
 )
@@ -30,9 +32,7 @@ def header(access_token: Password):
     return api_header
 
 
-def get_request_handler(url: str,
-                        url_extend: str,
-                        access_token: Password):
+def get_request_handler(url: str, url_extend: str, access_token: Password):
     """Handle get requests"""
     response = requests.get(
         f"{url}/api/v4/{url_extend}",
@@ -42,13 +42,12 @@ def get_request_handler(url: str,
     return response
 
 
-def get_dataset(url: str,
-                url_expand: str,
-                access_token: Password,
-                query_terms: list[str]) -> Any:
-    """create a list of usernames"""
+def get_dataset(url: str, url_expand: str, access_token: Password, query_terms: list[str]) -> Any:
+    """Create a list of usernames"""
     term = ""
-    payload = {"term": term.join(query_terms), }
+    payload = {
+        "term": term.join(query_terms),
+    }
     response = requests.post(
         f"{url}/api/v4/{url_expand}/search",
         headers=header(access_token),
@@ -62,9 +61,9 @@ class MattermostSearch(StringParameterType):
     """Mattermost Search Type"""
 
     def __init__(
-            self,
-            url_expand: str,
-            display_name: str,
+        self,
+        url_expand: str,
+        display_name: str,
     ) -> None:
         self.url_expand = url_expand
         self.display_name = display_name
@@ -86,11 +85,12 @@ class MattermostSearch(StringParameterType):
             raise ValueError("Input url and access token first.")
         result = []
         if len(query_terms) != 0:
-            datasets = get_dataset(depend_on_parameter_values[0],
-                                   self.url_expand,
-                                   depend_on_parameter_values[1],
-                                   query_terms
-                                   )
+            datasets = get_dataset(
+                depend_on_parameter_values[0],
+                self.url_expand,
+                depend_on_parameter_values[1],
+                query_terms,
+            )
             for object_name in datasets:
                 result.append(
                     Autocompletion(
@@ -143,13 +143,12 @@ input paths are recognized:
             name="url",
             label="URL",
             description="The base URL of your Mattermost deployment. "
-                        "Example: https://mattermost.example.org",
+            "Example: https://mattermost.example.org",
         ),
         PluginParameter(
             name="bot_name",
             label="Bot name",
-            description="The name or display name of the bot you want to use to"
-                        " connect."
+            description="The name or display name of the bot you want to use to" " connect.",
         ),
         PluginParameter(
             name="access_token",
@@ -179,7 +178,7 @@ If you want to send your message to multiple channels, separate them with a comm
             name="message",
             label="Message",
             description="The message size is limited to a configured maximum"
-                        " (e.g. 16383 characters).",
+            " (e.g. 16383 characters).",
             param_type=MultilineStringParameterType(),
             default_value="",
         ),
@@ -291,16 +290,17 @@ class MattermostPlugin(WorkflowPlugin):
         if obj_name:
             response = get_dataset(self.url, "users", self.access_token, [obj_name])
             for _ in response:
-                if obj_name in (_["username"],
-                                _["nickname"],
-                                _["email"],
-                                f'{_["first_name"]} {_["last_name"]}'
-                                ):
+                if obj_name in (
+                    _["username"],
+                    _["nickname"],
+                    _["email"],
+                    f'{_["first_name"]} {_["last_name"]}',
+                ):
                     return _["id"]
         raise ValueError(f"ID not found, check {obj_name} parameter.")
 
     def send_message_with_bot_to_user(self):
-        """sends messages from bot to one or more users."""
+        """Sends messages from bot to one or more users."""
         # payload for json to generate a direct channel with post request
         data = [self.get_id(self.bot_name), self.get_id(self.user)]
         # post request to generate the direct channel
@@ -315,25 +315,21 @@ class MattermostPlugin(WorkflowPlugin):
         """Request to find the channel ID with the bot name"""
         if not self.channel:
             raise ValueError("No channel name was provided.")
-        list_channel_data = get_dataset(self.url,
-                                        "channels",
-                                        self.access_token,
-                                        [self.channel])
+        list_channel_data = get_dataset(self.url, "channels", self.access_token, [self.channel])
         for _ in list_channel_data:
             if self.channel in (_["name"], _["display_name"]):
                 return _["id"]
         raise ValueError(f"Channel {self.channel} do not exist.")
 
     def send_message_with_bot_to_channel(self) -> None:
-        """sends messages from bot to channel."""
+        """Sends messages from bot to channel."""
         # payload for the json to generate the message
-        payload = {"channel_id": self.get_channel_id(),
-                   "message": self.message}
+        payload = {"channel_id": self.get_channel_id(), "message": self.message}
         # Post request for the message
         self.post_request_handler("posts", payload)
 
     def send_message_to_provided_parameter(self) -> None:
-        """will test if the message is sending to user or channel or both"""
+        """Will test if the message is sending to user or channel or both"""
         if self.message:
             if self.user and self.channel:
                 self.send_message_with_bot_to_channel()

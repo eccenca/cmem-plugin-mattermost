@@ -2,27 +2,25 @@
 import uuid
 
 import pytest
-from cmem_plugin_base.dataintegration.entity import (
-    EntitySchema,
-    EntityPath,
-    Entity,
-    Entities
-)
+from cmem_plugin_base.dataintegration.entity import Entities, Entity, EntityPath, EntitySchema
 from cmem_plugin_base.dataintegration.parameter.password import Password
 
 from cmem_plugin_mattermost.workflow.mattermost_plugin import (
     MattermostPlugin,
-    header,
+    MattermostSearch,
     get_dataset,
-    MattermostSearch, get_request_handler
+    get_request_handler,
+    header,
 )
-from tests.utils import (TestSystemContext,
-                         TestExecutionContext,
-                         TestPluginContext, needs_cmem, )
+from tests.utils import (
+    TestExecutionContext,
+    TestPluginContext,
+    TestSystemContext,
+    needs_cmem,
+)
 
 pytest_plugins = ["docker_compose"]
-access_token = Password(encrypted_value="ah85ckhk6ib6zqqjh7i7j16hra",
-                        system=TestSystemContext())
+access_token = Password(encrypted_value="ah85ckhk6ib6zqqjh7i7j16hra", system=TestSystemContext())
 bot_name = "plugin-test"
 user = "cmempy-developer"
 channel = "Town Square"
@@ -43,10 +41,10 @@ sample_data_empty = {
 
 
 def get_entities(sample_data) -> Entities:
-    """get entities object with lead columns"""
+    """Get entities object with lead columns"""
     projections = list(sample_data)
     entities = []
-    entity_uri = f"urn:uuid:{str(uuid.uuid4())}"
+    entity_uri = f"urn:uuid:{uuid.uuid4()!s}"
     values = [[sample_data[_]] for _ in projections]
     entities.append(Entity(uri=entity_uri, values=values))
     paths = [EntityPath(path=projection) for projection in projections]
@@ -149,9 +147,12 @@ def test_send_message_with_bot_to_channel_error(mattermost_service):
 
 
 def test_get_user_id(mattermost_service):
-    assert MattermostPlugin(
-        mattermost_service, access_token, bot_name, user, channel, message
-    ).get_id(user) == "hruniqwds7gg5bcm5fmn931iih"
+    assert (
+        MattermostPlugin(mattermost_service, access_token, bot_name, user, channel, message).get_id(
+            user
+        )
+        == "hruniqwds7gg5bcm5fmn931iih"
+    )
 
 
 def test_get_user_id_error(mattermost_service):
@@ -168,9 +169,12 @@ def test_get_user_id_error(mattermost_service):
 
 
 def test_get_channel_id(mattermost_service):
-    assert MattermostPlugin(
-        mattermost_service, access_token, bot_name, user, channel, message
-    ).get_channel_id() == "qzzdms4tyb8zzbo5e8b8r56mtc"
+    assert (
+        MattermostPlugin(
+            mattermost_service, access_token, bot_name, user, channel, message
+        ).get_channel_id()
+        == "qzzdms4tyb8zzbo5e8b8r56mtc"
+    )
 
 
 def test_get_channel_id_error(mattermost_service):
@@ -211,12 +215,7 @@ def test_send_message_to_provided_parameter_error(mattermost_service):
 
 def test_send_message_to_provided_parameter(mattermost_service):
     MattermostPlugin(
-        mattermost_service,
-        access_token,
-        bot_name,
-        user,
-        channel,
-        message
+        mattermost_service, access_token, bot_name, user, channel, message
     ).send_message_to_provided_parameter()
     MattermostPlugin(
         mattermost_service, access_token, bot_name, "", channel, message
@@ -234,11 +233,7 @@ def test_get_dataset(mattermost_service):
 @needs_cmem
 def test_autocomplete_error():
     with pytest.raises(ValueError):
-        MattermostSearch("users", "username").autocomplete(
-            ["cmem"],
-            [],
-            TestPluginContext()
-        )
+        MattermostSearch("users", "username").autocomplete(["cmem"], [], TestPluginContext())
 
 
 @needs_cmem
@@ -246,11 +241,9 @@ def test_autocomplete():
     MattermostSearch("users", "username").autocomplete(
         query_terms=["cmem"],
         depend_on_parameter_values=[url, access_token],
-        context=TestPluginContext()
+        context=TestPluginContext(),
     )
 
     MattermostSearch("users", "username").autocomplete(
-        query_terms=[],
-        depend_on_parameter_values=[url, access_token],
-        context=TestPluginContext()
+        query_terms=[], depend_on_parameter_values=[url, access_token], context=TestPluginContext()
     )
