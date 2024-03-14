@@ -25,21 +25,19 @@ TOKEN_DOCU = f"{DEV_PAGE}/integrate/reference/personal-access-token/"
 
 def header(access_token: Password):
     """Request Header"""
-    api_header = {
+    return {
         "Authorization": f"Bearer {access_token.decrypt()}",
         "Content-Type": "application/json",
     }
-    return api_header
 
 
 def get_request_handler(url: str, url_extend: str, access_token: Password):
     """Handle get requests"""
-    response = requests.get(
+    return requests.get(
         f"{url}/api/v4/{url_extend}",
         headers=header(access_token),
         timeout=2,
     )
-    return response
 
 
 def get_dataset(url: str, url_expand: str, access_token: Password, query_terms: list[str]) -> Any:
@@ -242,10 +240,7 @@ class MattermostPlugin(WorkflowPlugin):
                     i = 0
                     # row of given Entity
                     for _ in column_names:
-                        if len(entity.values[i]) > 0:
-                            param_value = entity.values[i][0]
-                        else:
-                            param_value = ""
+                        param_value = entity.values[i][0] if len(entity.values[i]) > 0 else ""
                         if _ == "user" and param_value != "":
                             self.user = param_value
                             user_counter += 1
@@ -277,13 +272,12 @@ class MattermostPlugin(WorkflowPlugin):
 
     def post_request_handler(self, url_expand, payload):
         """Handle post requests"""
-        response = requests.post(
+        return requests.post(
             f"{self.url}/api/v4/{url_expand}",
             headers=header(self.access_token),
             json=payload,
             timeout=2,
         )
-        return response
 
     def get_id(self, obj_name):
         """Request to find the ID"""
@@ -299,7 +293,7 @@ class MattermostPlugin(WorkflowPlugin):
                     return _["id"]
         raise ValueError(f"ID not found, check {obj_name} parameter.")
 
-    def send_message_with_bot_to_user(self):
+    def send_message_with_bot_to_user(self) -> None:
         """Sends messages from bot to one or more users."""
         # payload for json to generate a direct channel with post request
         data = [self.get_id(self.bot_name), self.get_id(self.user)]
