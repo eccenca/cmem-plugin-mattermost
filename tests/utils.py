@@ -72,15 +72,20 @@ class TestExecutionContext(ExecutionContext):
 
 
 class TestSystemContext(SystemContext):
+    """dummy system context that can be used in tests"""
+
     def __init__(self):
         self._version = "1.0.0"
         self._prefix = "encrypted_"
 
     def di_version(self) -> str:
+        """DI version"""
         return f"{self._version}"
 
     def encrypt(self, value: str) -> str:
+        """Encrypt value"""
         return f"{self._prefix + value}"
 
     def decrypt(self, value: str) -> str:
+        """Decrypt value"""
         return value.replace(self._prefix, "")
