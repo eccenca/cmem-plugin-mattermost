@@ -17,13 +17,14 @@ from cmem_plugin_base.dataintegration.parameter.password import Password
 from cmem_plugin_base.dataintegration.plugins import WorkflowPlugin
 from cmem_plugin_base.dataintegration.ports import FixedNumberOfInputs, FixedSchemaPort
 from cmem_plugin_base.dataintegration.types import Autocompletion, StringParameterType
+from requests import Response
 
 DEV_PAGE = "https://developers.mattermost.com"
 BOTS_DOCU = f"{DEV_PAGE}/integrate/reference/bot-accounts/"
 TOKEN_DOCU = f"{DEV_PAGE}/integrate/reference/personal-access-token/"
 
 
-def header(access_token: Password):
+def header(access_token: Password) -> dict[str, str]:
     """Request Header"""
     return {
         "Authorization": f"Bearer {access_token.decrypt()}",
@@ -31,7 +32,7 @@ def header(access_token: Password):
     }
 
 
-def get_request_handler(url: str, url_extend: str, access_token: Password):
+def get_request_handler(url: str, url_extend: str, access_token: Password) -> Response:
     """Handle get requests"""
     return requests.get(
         f"{url}/api/v4/{url_extend}",
@@ -40,7 +41,9 @@ def get_request_handler(url: str, url_extend: str, access_token: Password):
     )
 
 
-def get_dataset(url: str, url_expand: str, access_token: Password, query_terms: list[str]) -> Any:
+def get_dataset(
+    url: str, url_expand: str, access_token: Password, query_terms: list[str]
+) -> list[dict[str, str]]:
     """Create a list of usernames"""
     term = ""
     payload = {
@@ -52,7 +55,7 @@ def get_dataset(url: str, url_expand: str, access_token: Password, query_terms: 
         json=payload,
         timeout=2,
     )
-    return response.json()
+    return response.json()  # type: ignore[no-any-return]
 
 
 class MattermostSearch(StringParameterType):
@@ -66,7 +69,7 @@ class MattermostSearch(StringParameterType):
         self.url_expand = url_expand
         self.display_name = display_name
 
-    autocompletion_depends_on_parameters: list[str] = ["url", "access_token"]
+    autocompletion_depends_on_parameters: list[str] = ["url", "access_token"]  # noqa: RUF012
 
     # auto complete for values
     allow_only_autocompleted_values: bool = True
@@ -79,6 +82,8 @@ class MattermostSearch(StringParameterType):
         depend_on_parameter_values: list[Any],
         context: PluginContext,
     ) -> list[Autocompletion]:
+        """Get list of completions for query terms"""
+        _ = context
         if not depend_on_parameter_values:
             raise ValueError("Input url and access token first.")
         result = []
@@ -89,19 +94,21 @@ class MattermostSearch(StringParameterType):
                 depend_on_parameter_values[1],
                 query_terms,
             )
-            for object_name in datasets:
-                result.append(
-                    Autocompletion(
-                        value=f"{object_name[self.display_name]}",
-                        label=f"{object_name[self.display_name]}",
-                    )
+
+            result = [
+                Autocompletion(
+                    value=f"{object_name[self.display_name]}",
+                    label=f"{object_name[self.display_name]}",
                 )
-            result.sort(key=lambda x: x.label)  # type: ignore
+                for object_name in datasets
+            ]
+
+            result.sort(key=lambda x: x.label)
             return result
         if len(query_terms) == 0:
             label = f"Enter a letter to get a list of {self.url_expand}."
             result.append(Autocompletion(value="", label=f"{label}"))
-        result.sort(key=lambda x: x.label)  # type: ignore
+        result.sort(key=lambda x: x.label)
         return result
 
 
@@ -185,8 +192,7 @@ If you want to send your message to multiple channels, separate them with a comm
 class MattermostPlugin(WorkflowPlugin):
     """Send messages to Mattermost channels and users."""
 
-    # pylint: disable=R0902,R0913
-    def __init__(
+    def __init__(  # noqa: PLR0913
         self,
         url: str,
         access_token: Password,
@@ -216,6 +222,7 @@ class MattermostPlugin(WorkflowPlugin):
         self.output_port = None
 
     def execute(self, inputs: Sequence[Entities], context: ExecutionContext) -> None:
+        """Execute the workflow plugin on a given sequence of entities"""
         self.log.info("Mattermost plugin started.")
         # fix message with every start, could be used at creating of the workflow item
         if not self.user and not self.channel and not inputs:
@@ -270,7 +277,7 @@ class MattermostPlugin(WorkflowPlugin):
                 )
             )
 
-    def post_request_handler(self, url_expand, payload):
+    def post_request_handler(self, url_expand: str, payload: dict | list) -> Response:
         """Handle post requests"""
         return requests.post(
             f"{self.url}/api/v4/{url_expand}",
@@ -279,7 +286,7 @@ class MattermostPlugin(WorkflowPlugin):
             timeout=2,
         )
 
-    def get_id(self, obj_name):
+    def get_id(self, obj_name: str) -> str:
         """Request to find the ID"""
         if obj_name:
             response = get_dataset(self.url, "users", self.access_token, [obj_name])
@@ -290,11 +297,11 @@ class MattermostPlugin(WorkflowPlugin):
                     _["email"],
                     f'{_["first_name"]} {_["last_name"]}',
                 ):
-                    return _["id"]
+                    return _["id"]  # type: ignore[no-any-return]
         raise ValueError(f"ID not found, check {obj_name} parameter.")
 
     def send_message_with_bot_to_user(self) -> None:
-        """Sends messages from bot to one or more users."""
+        """Send messages from bot to one or more users."""
         # payload for json to generate a direct channel with post request
         data = [self.get_id(self.bot_name), self.get_id(self.user)]
         # post request to generate the direct channel
@@ -305,18 +312,18 @@ class MattermostPlugin(WorkflowPlugin):
         # post request to send the message
         self.post_request_handler("posts", payload)
 
-    def get_channel_id(self):
+    def get_channel_id(self) -> str:
         """Request to find the channel ID with the bot name"""
         if not self.channel:
             raise ValueError("No channel name was provided.")
         list_channel_data = get_dataset(self.url, "channels", self.access_token, [self.channel])
         for _ in list_channel_data:
             if self.channel in (_["name"], _["display_name"]):
-                return _["id"]
+                return _["id"]  # type: ignore[no-any-return]
         raise ValueError(f"Channel {self.channel} do not exist.")
 
     def send_message_with_bot_to_channel(self) -> None:
-        """Sends messages from bot to channel."""
+        """Send messages from bot to channel."""
         # payload for the json to generate the message
         payload = {"channel_id": self.get_channel_id(), "message": self.message}
         # Post request for the message
