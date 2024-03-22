@@ -239,9 +239,7 @@ def test_send_message_to_provided_parameter(mattermost_service: str) -> None:
     MattermostPlugin(
         mattermost_service, access_token, bot_name, "", channel, message
     ).send_message()
-    MattermostPlugin(
-        mattermost_service, access_token, bot_name, user, "", message
-    ).send_message()
+    MattermostPlugin(mattermost_service, access_token, bot_name, user, "", message).send_message()
 
 
 def test_get_dataset(mattermost_service: str) -> None:
