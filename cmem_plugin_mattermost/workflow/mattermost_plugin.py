@@ -228,7 +228,7 @@ class MattermostPlugin(WorkflowPlugin):
         if not self.user and not self.channel and not inputs:
             pass
         if self.user or self.channel:
-            self.send_message_to_provided_parameter()
+            self.send_message()
         if inputs:
             entities_counter = 0
             channel_counter = 0
@@ -259,7 +259,7 @@ class MattermostPlugin(WorkflowPlugin):
                         elif _ == "message" and param_value != "":
                             self.message = param_value
                         i += 1
-                    self.send_message_to_provided_parameter()
+                    self.send_message()
             users = list(dict.fromkeys(users))
             channels = list(dict.fromkeys(channels))
             context.report.update(
@@ -300,7 +300,7 @@ class MattermostPlugin(WorkflowPlugin):
                     return _["id"]  # type: ignore[no-any-return]
         raise ValueError(f"ID not found, check {obj_name} parameter.")
 
-    def send_message_with_bot_to_user(self) -> None:
+    def send_message_to_user(self) -> None:
         """Send messages from bot to one or more users."""
         # payload for json to generate a direct channel with post request
         data = [self.get_id(self.bot_name), self.get_id(self.user)]
@@ -322,22 +322,19 @@ class MattermostPlugin(WorkflowPlugin):
                 return _["id"]  # type: ignore[no-any-return]
         raise ValueError(f"Channel {self.channel} do not exist.")
 
-    def send_message_with_bot_to_channel(self) -> None:
+    def send_message_to_channel(self) -> None:
         """Send messages from bot to channel."""
         # payload for the json to generate the message
         payload = {"channel_id": self.get_channel_id(), "message": self.message}
         # Post request for the message
         self.post_request_handler("posts", payload)
 
-    def send_message_to_provided_parameter(self) -> None:
+    def send_message(self) -> None:
         """Will test if the message is sending to user or channel or both"""
         if self.message:
-            if self.user and self.channel:
-                self.send_message_with_bot_to_channel()
-                self.send_message_with_bot_to_user()
-            elif self.user and not self.channel:
-                self.send_message_with_bot_to_user()
-            elif self.channel and not self.user:
-                self.send_message_with_bot_to_channel()
+            if self.user:
+                self.send_message_to_user()
+            if self.channel:
+                self.send_message_to_channel()
         else:
             raise ValueError("No recipient.")

@@ -118,7 +118,7 @@ def test_execute_with_empty_message_error(mattermost_service: str) -> None:
             user,
             channel,
             "",
-        ).send_message_to_provided_parameter()
+        ).send_message()
 
 
 def test_send_message_with_bot_to_user(mattermost_service: str) -> None:
@@ -130,14 +130,14 @@ def test_send_message_with_bot_to_user(mattermost_service: str) -> None:
         user,
         "",
         "Single user test message",
-    ).send_message_with_bot_to_user()
+    ).send_message_to_user()
 
 
 def test_send_message_with_bot_to_channel(mattermost_service: str) -> None:
     """Test sending message to channel with bot"""
     MattermostPlugin(
         mattermost_service, access_token, bot_name, "", channel, "Channel test message"
-    ).send_message_with_bot_to_channel()
+    ).send_message_to_channel()
 
 
 def test_send_message_with_bot_to_channel_error(mattermost_service: str) -> None:
@@ -151,7 +151,7 @@ def test_send_message_with_bot_to_channel_error(mattermost_service: str) -> None
             "",
             wrong_channel,
             "Channel test message",
-        ).send_message_with_bot_to_channel()
+        ).send_message_to_channel()
 
 
 def test_get_user_id(mattermost_service: str) -> None:
@@ -228,20 +228,20 @@ def test_send_message_to_provided_parameter_error(mattermost_service: str) -> No
     with pytest.raises(ValueError, match="No recipient."):
         MattermostPlugin(
             mattermost_service, access_token, bot_name, user, channel, ""
-        ).send_message_to_provided_parameter()
+        ).send_message()
 
 
 def test_send_message_to_provided_parameter(mattermost_service: str) -> None:
     """Test send message to provided chanel or user"""
     MattermostPlugin(
         mattermost_service, access_token, bot_name, user, channel, message
-    ).send_message_to_provided_parameter()
+    ).send_message()
     MattermostPlugin(
         mattermost_service, access_token, bot_name, "", channel, message
-    ).send_message_to_provided_parameter()
+    ).send_message()
     MattermostPlugin(
         mattermost_service, access_token, bot_name, user, "", message
-    ).send_message_to_provided_parameter()
+    ).send_message()
 
 
 def test_get_dataset(mattermost_service: str) -> None:
