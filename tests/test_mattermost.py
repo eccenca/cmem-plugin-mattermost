@@ -1,4 +1,5 @@
 """Plugin tests."""
+
 import uuid
 
 import pytest
@@ -71,7 +72,7 @@ def test_execute_with_inputs_and_static(mattermost_service: str) -> None:
 
 def test_execute_error(mattermost_service: str) -> None:
     """Test execute error with out user or channel"""
-    with pytest.raises(ValueError, match="No recipient."):
+    with pytest.raises(ValueError, match=r"No recipient."):
         MattermostPlugin(
             mattermost_service,
             access_token,
@@ -110,7 +111,7 @@ def test_execute_with_no_inputs(mattermost_service: str) -> None:
 
 def test_execute_with_empty_message_error(mattermost_service: str) -> None:
     """Test execute with empty message"""
-    with pytest.raises(ValueError, match="No recipient."):
+    with pytest.raises(ValueError, match=r"No recipient."):
         MattermostPlugin(
             mattermost_service,
             access_token,
@@ -167,13 +168,13 @@ def test_get_user_id(mattermost_service: str) -> None:
 def test_get_user_id_error(mattermost_service: str) -> None:
     """Test get_user_id error"""
     user_empty = ""
-    with pytest.raises(ValueError, match="ID not found, check  parameter."):
+    with pytest.raises(ValueError, match=r"ID not found, check  parameter."):
         MattermostPlugin(
             mattermost_service, access_token, bot_name, user_empty, channel, message
         ).get_id(user_empty)
 
     user_wrong = "wrong_user"
-    with pytest.raises(ValueError, match="ID not found, check  parameter."):
+    with pytest.raises(ValueError, match=r"ID not found, check  parameter."):
         MattermostPlugin(
             mattermost_service, access_token, bot_name, user_wrong, channel, message
         ).get_id(user_empty)
@@ -192,7 +193,7 @@ def test_get_channel_id(mattermost_service: str) -> None:
 def test_get_channel_id_error(mattermost_service: str) -> None:
     """Test get channel id error"""
     channel_wrong = ""
-    with pytest.raises(ValueError, match="No channel name was provided."):
+    with pytest.raises(ValueError, match=r"No channel name was provided."):
         MattermostPlugin(
             mattermost_service, access_token, bot_name, user, channel_wrong, message
         ).get_channel_id()
@@ -225,7 +226,7 @@ def test_get_request_handler(mattermost_service: str) -> None:
 
 def test_send_message_to_provided_parameter_error(mattermost_service: str) -> None:
     """Test send message to"""
-    with pytest.raises(ValueError, match="No recipient."):
+    with pytest.raises(ValueError, match=r"No recipient."):
         MattermostPlugin(
             mattermost_service, access_token, bot_name, user, channel, ""
         ).send_message()
@@ -252,7 +253,7 @@ def test_get_dataset(mattermost_service: str) -> None:
 @needs_cmem
 def test_autocomplete_error() -> None:
     """Test autocomplete_error"""
-    with pytest.raises(ValueError, match="Input url and access token first."):
+    with pytest.raises(ValueError, match=r"Input url and access token first."):
         MattermostSearch("users", "username").autocomplete(["cmem"], [], TestPluginContext())
 
 

@@ -20,7 +20,7 @@ homepage = "https://github.com/eccenca/cmem-plugin-mattermost"
 [tool.poetry.dependencies]
 # if you need to change python version here, change it also in .python-version
 python = "^3.13"
-responses = "^0.23.1"
+requests = "^2.32.5"
 
 [tool.poetry.dependencies.cmem-plugin-base]
 version = "^4.15.0"

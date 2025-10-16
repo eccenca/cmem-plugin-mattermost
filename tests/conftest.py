@@ -1,4 +1,5 @@
 """pytest configuration."""
+
 import pytest
 import requests
 from pytest_docker_compose import ContainerGetter
@@ -6,7 +7,7 @@ from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
 
-@pytest.fixture()
+@pytest.fixture
 def mattermost_service(module_scoped_container_getter: ContainerGetter) -> str:
     """Wait for the api from mattermost to become responsive"""
     retry = Retry(total=5, backoff_factor=3, status_forcelist=[500, 502, 503, 504])
