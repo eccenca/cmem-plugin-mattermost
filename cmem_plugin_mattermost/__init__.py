@@ -1,1 +1,1 @@
-"""mattermost - main package"""
+"""cmem-plugin-mattermost"""
