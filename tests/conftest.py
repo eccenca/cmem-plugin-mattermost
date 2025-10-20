@@ -24,7 +24,6 @@ def mattermost_service(docker_ip: str, docker_services) -> str:  # noqa: ANN001
     session = requests.Session()
     session.mount("http://", HTTPAdapter(max_retries=retry))
 
-    # Wait for service to be ready
     docker_services.wait_until_responsive(
         timeout=30.0, pause=0.5, check=lambda: session.get(f"{base_url}/health_check").ok
     )
