@@ -2,9 +2,13 @@
 
 import pytest
 import requests
-from pytest_docker_compose import ContainerGetter
+from pytest_docker_compose import ContainerGetter, plugin
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
+
+pytest_plugins = ["docker_compose"]
+
+module_scoped_container_getter = plugin.module_scoped_container_getter
 
 
 @pytest.fixture

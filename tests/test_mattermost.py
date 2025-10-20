@@ -20,7 +20,6 @@ from tests.utils import (
     needs_cmem,
 )
 
-pytest_plugins = ["docker_compose"]
 access_token = Password(encrypted_value="ah85ckhk6ib6zqqjh7i7j16hra", system=TestSystemContext())
 bot_name = "plugin-test"
 user = "cmempy-developer"
