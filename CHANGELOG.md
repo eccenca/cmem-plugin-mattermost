@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/) and this project adheres to [Semantic Versioning](https://semver.org/)
 
+## [2.3.0] 2025-10-20
+
+### Changed
+
+- upgrade template for python 3.13 compatability
+- changed from pytest_docker_compose to pytest-docker in test suite 
+  - this was needed since urllib required a certain docker version that pytest_docker_compose could not fulfill
+
 ## [2.2.0] 2024-03-24
 
 ### Changed

@@ -1,4 +1,5 @@
 """A Mattermost integration Plugin"""
+
 from collections.abc import Sequence
 from typing import Any
 
@@ -153,7 +154,7 @@ input paths are recognized:
         PluginParameter(
             name="bot_name",
             label="Bot name",
-            description="The name or display name of the bot you want to use to" " connect.",
+            description="The name or display name of the bot you want to use to connect.",
         ),
         PluginParameter(
             name="access_token",
@@ -258,7 +259,7 @@ class MattermostPlugin(WorkflowPlugin):
                             channel_counter += 1
                         elif _ == "message" and param_value != "":
                             self.message = param_value
-                        i += 1
+                        i += 1  # noqa: SIM113
                     self.send_message()
             users = list(dict.fromkeys(users))
             channels = list(dict.fromkeys(channels))
@@ -295,7 +296,7 @@ class MattermostPlugin(WorkflowPlugin):
                     _["username"],
                     _["nickname"],
                     _["email"],
-                    f'{_["first_name"]} {_["last_name"]}',
+                    f"{_['first_name']} {_['last_name']}",
                 ):
                     return _["id"]  # type: ignore[no-any-return]
         raise ValueError(f"ID not found, check {obj_name} parameter.")
