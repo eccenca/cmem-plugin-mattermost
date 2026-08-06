@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/) and this project adheres to [Semantic Versioning](https://semver.org/)
 
+## [2.4.0] 2026-08-06
+
+### Changed
+
+- update template
+- remove obsolete `cmem-cmempy` dependency
+
+
 ## [2.3.0] 2025-10-20
 
 ### Changed
@@ -12,11 +20,13 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 - changed from pytest_docker_compose to pytest-docker in test suite 
   - this was needed since urllib required a certain docker version that pytest_docker_compose could not fulfill
 
+
 ## [2.2.0] 2024-03-24
 
 ### Changed
 
 - upgrade template to 6.1
+
 
 ## [2.1.0] 2023-10-29
 
