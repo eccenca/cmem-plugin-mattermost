@@ -1,10 +1,16 @@
 """Plugin tests."""
 
+import os
 import uuid
 
 import pytest
 from cmem_plugin_base.dataintegration.entity import Entities, Entity, EntityPath, EntitySchema
 from cmem_plugin_base.dataintegration.parameter.password import Password
+from cmem_plugin_base.testing import (
+    TestExecutionContext,
+    TestPluginContext,
+    TestSystemContext,
+)
 
 from cmem_plugin_mattermost.workflow.mattermost_plugin import (
     MattermostPlugin,
@@ -13,11 +19,9 @@ from cmem_plugin_mattermost.workflow.mattermost_plugin import (
     get_request_handler,
     header,
 )
-from tests.utils import (
-    TestExecutionContext,
-    TestPluginContext,
-    TestSystemContext,
-    needs_cmem,
+
+needs_cmem = pytest.mark.skipif(
+    os.environ.get("CMEM_BASE_URI", "") == "", reason="Needs CMEM configuration"
 )
 
 access_token = Password(encrypted_value="ah85ckhk6ib6zqqjh7i7j16hra", system=TestSystemContext())
