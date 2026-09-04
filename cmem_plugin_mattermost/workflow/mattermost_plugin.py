@@ -193,7 +193,7 @@ If you want to send your message to multiple channels, separate them with a comm
 class MattermostPlugin(WorkflowPlugin):
     """Send messages to Mattermost channels and users."""
 
-    def __init__(  # noqa: PLR0913
+    def __init__(  # noqa: PLR0913 PLR0917
         self,
         url: str,
         access_token: Password,
