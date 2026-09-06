@@ -23,6 +23,17 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ### Changed
 
+- rewrote the task documentation and every parameter description against the
+  actual behaviour: the ports and what they carry, that the task is a terminal
+  step, and that a message configured on the task is sent in addition to the
+  entity messages rather than as a fallback for them
+- corrected the `Channel` description, which promised that a comma separated
+  list is sent to several channels — it is looked up as a single channel name
+  and fails; `README.md` claimed the same for users and channels
+- corrected the `Bot name` description, which offered a display name that
+  Mattermost does not match against
+- the execution report reads `No. of messages sent` instead of
+  `No. of messages send:`
 - updated dependencies and template, including the `cmem-plugin-base` floor
   (`^4.19.0` to `^4.20.0`)
 - `TaskfileCustom.yaml` uses Compose v2 (`docker compose`) and the Compose v2

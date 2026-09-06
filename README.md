@@ -25,14 +25,14 @@ The plugin can be used as a workflow plugin. For execution, it needs the url of 
 |----------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `url`          | The URL of the Mattermost server to which the plugin should connect.                                                                                                            |
 | `access_token` | The access token of the bot that will be used to send the messages.                                                                                                             |
-| `bot_name`     | The display name or name of the bot used to send the messages.                                                                                                                  |
-| `user`         | The full name, username, nickname, or email address of the user(s) who will receive the message. If the message is to be sent to multiple users, separate them with a comma "," |  
-| `channel`      | The name or display name of the channel(s) to which the message is to be sent. If the message is to be sent to multiple channels, separate them with a comma ","                |
-| `message`      | The message to be sent.                                                                                                                                                         |
+| `bot_name`     | The bot account that sends the messages, named by its username, nickname, email address or full name.                                                                           |
+| `user`         | The single user account that receives the message as a direct message, named by username, nickname, email address or full name.                                                 |
+| `channel`      | The single channel that receives the message, named by its name or its display name.                                                                                            |
+| `message`      | The message text, interpreted by Mattermost as Markdown.                                                                                                                        |
 
 ### Execution
 
-This plugin enables users to send messages either statically or dynamically via entities. For static messages, users and channels must be pre-configured to receive the message. For dynamic messages, input for user, channel, and message can be passed in as entities during workflow execution. Messages can be sent to specified users or channels every time the workflow is executed.
+A recipient and a message configured on the task itself are sent once, before any entity is read. Entities arriving on the input port carry the paths `user`, `channel` and `message`, and each one is sent as a message of its own. Configuring a message on the task while entities also arrive sends both.
 
 ## Running Test
 

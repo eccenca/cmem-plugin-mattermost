@@ -119,32 +119,44 @@ class MattermostSearch(StringParameterType):
     label="Send Mattermost messages",
     plugin_id="cmem_plugin_mattermost",
     icon=Icon(file_name="mattermost.svg", package=__package__),
-    description="Send messages to Mattermost channels and/or users.",
-    documentation=f"""This task sends messages to Mattermost channels and users.
-
-You need a bot account in order to connect to Mattermost.
-Learn more on bot accounts at
+    description="Post messages to Mattermost users and channels through a bot account.",
+    documentation=f"""This task posts messages to Mattermost. Every message is sent by a bot
+account, so recipients see it as coming from the bot rather than from the
+person who ran the workflow. You need that bot account and a personal access
+token for it before the task can do anything - learn more at
 [developers.mattermost.com]({DEV_PAGE}):
 
 - [Using bot accounts]({BOTS_DOCU})
 - [Personal access tokens]({TOKEN_DOCU})
 
-The task has two working modes.
+# Ports
 
-# Single Message
+One input port accepts entities carrying the paths `user`, `channel` and
+`message`. Each entity is sent as one message per recipient it names: a direct
+message to the user, a post to the channel, or both.
 
-You can send a single static message to a pre-configured channel or user.
-Just configure the User and/or Channel and Message parameters to do so.
+There is no output port. The task is a terminal step - it hands nothing on to
+the rest of the workflow and reports only how many messages went where.
 
-# Multiple Messages
+A recipient and a message configured on the task itself are sent once, before
+any entity is read. Configuring them while entities also arrive sends both:
+that message once, and one message per entity on top of it.
 
-You can send multiple messages to different channels or users by piping data into
-the task. For each entity, a message is send. For dynamic messages the following
-input paths are recognized:
+# Caveats
 
-- user
-- channel
-- message
+- One field names one recipient, matched exactly. A user is found by username,
+  nickname, email address or full name; a channel by its name or its display
+  name. A comma separated list is **not** split into several recipients - it is
+  looked up as a single name, which fails.
+- What an entity carries is not merged with what is configured on the task. An
+  entity without a message does not fall back to the configured message; it
+  fails.
+- The task stops at the first entity it cannot send - one naming no recipient,
+  one carrying no message, or one naming a recipient Mattermost does not know.
+  Messages sent for earlier entities have already been posted and are not taken
+  back.
+- Requests to Mattermost time out after two seconds, so an unreachable or slow
+  server fails the task rather than delaying it.
 """,
     parameters=[
         PluginParameter(
@@ -156,7 +168,8 @@ input paths are recognized:
         PluginParameter(
             name="bot_name",
             label="Bot name",
-            description="The name or display name of the bot you want to use to connect.",
+            description="The bot account that sends the messages, named by its username,"
+            " nickname, email address or full name.",
         ),
         PluginParameter(
             name="access_token",
@@ -166,27 +179,30 @@ input paths are recognized:
         PluginParameter(
             name="user",
             label="User",
-            description="""The user account which will receive the message.
+            description="""The single user account that receives the message as a direct message,
+named by username, nickname, email address or full name.
 
-You can search for users if the connection was successful (Base URl, bot + token).""",
+Type at least one letter to search for users. Suggestions need the URL and the
+Access Token to be filled in first.""",
             param_type=MattermostSearch("users", "username"),
             default_value="",
         ),
         PluginParameter(
             name="channel",
             label="Channel",
-            description="""The channel which will receive the message.
+            description="""The single channel that receives the message, named by its name or its
+display name.
 
-You can search for channels if the connection was successful (Base URl, bot + token).
-If you want to send your message to multiple channels, separate them with a comma.""",
+Type at least one letter to search for channels. Suggestions need the URL and
+the Access Token to be filled in first.""",
             param_type=MattermostSearch("channels", "name"),
             default_value="",
         ),
         PluginParameter(
             name="message",
             label="Message",
-            description="The message size is limited to a configured maximum"
-            " (e.g. 16383 characters).",
+            description="The message text, interpreted by Mattermost as Markdown. Its maximum"
+            " length is a server setting, 16383 characters by default.",
             param_type=MultilineStringParameterType(),
             default_value="",
         ),
@@ -234,7 +250,7 @@ class MattermostPlugin(WorkflowPlugin):
             operation="write",
             operation_desc="entities received",
             summary=[
-                ("No. of messages send:", f"{counters['messages']}"),
+                ("No. of messages sent", f"{counters['messages']}"),
                 ("No. of direct messages", f"{counters['users']}"),
                 ("No. of channel messages", f"{counters['channels']}"),
                 ("Channels that received a message", ", ".join(dict.fromkeys(channels))),

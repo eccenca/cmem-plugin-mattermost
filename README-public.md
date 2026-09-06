@@ -1,6 +1,6 @@
 # cmem-plugin-mattermost
 
-Send messages to [Mattermost](https://mattermost.com/). channels and users.
+Send messages to [Mattermost](https://mattermost.com/) channels and users.
 
 [![eccenca Corporate Memory][cmem-shield]][cmem-link]
 
