@@ -66,14 +66,20 @@ poetry run pytest tests/test_mattermost.py
 poetry run pytest tests/test_mattermost.py::test_header
 ```
 
-Tests marked with `@needs_cmem` require a running Mattermost instance. Tests not so marked are unit-only. The `mattermost_service` fixture provides the base URL (via env).
+Tests marked with `@needs_cmem` need a reachable Corporate Memory deployment, because they
+construct a `TestExecutionContext`/`TestPluginContext`, which fetches a real OAuth token on
+construction; they skip when `CMEM_BASE_URI` is unset. That is independent of Mattermost: the
+`mattermost_service` fixture starts the local Mattermost container via `pytest-docker` and
+returns its base URL, so any test taking that fixture needs Docker, marker or not.
 
 ### Local Mattermost test environment
 
+`TaskfileCustom.yaml` is included with `flatten: true`, so these tasks carry no namespace prefix:
+
 ```shell
-task custom:mattermost:start    # docker-compose up
-task custom:mattermost:db:load  # restore known database state
-task custom:mattermost:stop     # cleanup containers
+task mattermost:start    # docker compose up
+task mattermost:db:load  # restore known database state
+task mattermost:stop     # cleanup containers
 ```
 
 See README.md for pre-configured test user accounts and bot credentials.
@@ -81,8 +87,11 @@ See README.md for pre-configured test user accounts and bot credentials.
 ## Key conventions
 
 - **Python 3.13** target (`.python-version`, `pyproject.toml` ruff config)
-- **ruff** with `line-length = 100`, target py313, broad rule set (ALL) with specific ignores listed in `pyproject.toml`
+- **ruff** with `line-length = 100`, target py313, `select = ["ALL"]` with a curated `ignore` list
+  and `per-file-ignores` for `tests/` in `pyproject.toml`. Do not extend either list and do not add
+  `# noqa` to silence a finding — see `.claude/rules/copier-template.md`.
 - **mypy** with `warn_return_any = true`, `ignore_missing_imports = true`
 - **Poetry** for dependency management; the project uses `poetry-dynamic-versioning` for version bumps from git tags
 - **License**: Apache-2.0
-- This repo was bootstrapped from the [cmem-plugin-template](https://github.com/eccenca/cmem-plugin-template) (Copier, v8.5.0+)
+- This repo was bootstrapped from the [cmem-plugin-template](https://github.com/eccenca/cmem-plugin-template)
+  (Copier); the rendered version is recorded as `_commit` in `.copier-answers.yml`

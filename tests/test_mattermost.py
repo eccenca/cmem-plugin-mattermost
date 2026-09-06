@@ -73,6 +73,7 @@ def test_execute_with_inputs_and_static(mattermost_service: str) -> None:
     ).execute([get_entities(sample_data_full)], TestExecutionContext())
 
 
+@needs_cmem
 def test_execute_error(mattermost_service: str) -> None:
     """Test execute error with out user or channel"""
     with pytest.raises(ValueError, match=r"No recipient."):
@@ -114,7 +115,7 @@ def test_execute_with_no_inputs(mattermost_service: str) -> None:
 
 def test_execute_with_empty_message_error(mattermost_service: str) -> None:
     """Test execute with empty message"""
-    with pytest.raises(ValueError, match=r"No recipient."):
+    with pytest.raises(ValueError, match=r"No message."):
         MattermostPlugin(
             mattermost_service,
             access_token,
@@ -229,10 +230,16 @@ def test_get_request_handler(mattermost_service: str) -> None:
 
 def test_send_message_to_provided_parameter_error(mattermost_service: str) -> None:
     """Test send message to"""
-    with pytest.raises(ValueError, match=r"No recipient."):
+    with pytest.raises(ValueError, match=r"No message."):
         MattermostPlugin(
             mattermost_service, access_token, bot_name, user, channel, ""
         ).send_message()
+
+
+def test_send_message_without_recipient_error(mattermost_service: str) -> None:
+    """Test that a message with neither user nor channel is refused"""
+    with pytest.raises(ValueError, match=r"No recipient."):
+        MattermostPlugin(mattermost_service, access_token, bot_name, "", "", message).send_message()
 
 
 def test_send_message_to_provided_parameter(mattermost_service: str) -> None:

@@ -1,6 +1,7 @@
 """A Mattermost integration Plugin"""
 
 from collections.abc import Sequence
+from contextlib import suppress
 from typing import Any
 
 import requests
@@ -46,9 +47,10 @@ def get_dataset(
     url: str, url_expand: str, access_token: Password, query_terms: list[str]
 ) -> list[dict[str, str]]:
     """Create a list of usernames"""
-    term = ""
+    # The UI splits what the user typed on whitespace; rejoin it so Mattermost
+    # searches for "john doe" rather than for "johndoe".
     payload = {
-        "term": term.join(query_terms),
+        "term": " ".join(query_terms),
     }
     response = requests.post(
         f"{url}/api/v4/{url_expand}/search",
@@ -193,7 +195,9 @@ If you want to send your message to multiple channels, separate them with a comm
 class MattermostPlugin(WorkflowPlugin):
     """Send messages to Mattermost channels and users."""
 
-    def __init__(  # noqa: PLR0913 PLR0917
+    # A plugin constructor takes one argument per PluginParameter, so its arity is
+    # fixed by the plugin's configuration surface, not by a style choice here.
+    def __init__(  # noqa: PLR0913, PLR0917
         self,
         url: str,
         access_token: Password,
@@ -222,61 +226,64 @@ class MattermostPlugin(WorkflowPlugin):
         self.input_ports = FixedNumberOfInputs([FixedSchemaPort(self.schema)])
         self.output_port = None
 
+    @staticmethod
+    def _report(counters: dict[str, int], users: list[str], channels: list[str]) -> ExecutionReport:
+        """Build the execution report from the running counters"""
+        return ExecutionReport(
+            entity_count=counters["entities"],
+            operation="write",
+            operation_desc="entities received",
+            summary=[
+                ("No. of messages send:", f"{counters['messages']}"),
+                ("No. of direct messages", f"{counters['users']}"),
+                ("No. of channel messages", f"{counters['channels']}"),
+                ("Channels that received a message", ", ".join(dict.fromkeys(channels))),
+                ("Users who received a message", ", ".join(dict.fromkeys(users))),
+            ],
+        )
+
     def execute(self, inputs: Sequence[Entities], context: ExecutionContext) -> None:
         """Execute the workflow plugin on a given sequence of entities"""
         self.log.info("Mattermost plugin started.")
-        # fix message with every start, could be used at creating of the workflow item
-        if not self.user and not self.channel and not inputs:
-            pass
+        # the statically configured message is sent once, before any input is read
         if self.user or self.channel:
             self.send_message()
-        if inputs:
-            entities_counter = 0
-            channel_counter = 0
-            channels: list = []
-            users: list = []
-            user_counter = 0
-            # Entity/ies
-            for item in inputs:
-                column_names = [ep.path for ep in item.schema.paths]
-                # columns of given Entity
-                for entity in item.entities:
-                    entities_counter += 1
-                    self.user = ""
-                    self.channel = ""
-                    self.message = ""
-                    i = 0
-                    # row of given Entity
-                    for _ in column_names:
-                        param_value = entity.values[i][0] if len(entity.values[i]) > 0 else ""
-                        if _ == "user" and param_value != "":
-                            self.user = param_value
-                            user_counter += 1
-                            users.append(self.user)
-                        elif _ == "channel" and param_value != "":
-                            self.channel = param_value
-                            channels.append(self.channel)
-                            channel_counter += 1
-                        elif _ == "message" and param_value != "":
-                            self.message = param_value
-                        i += 1  # noqa: SIM113
-                    self.send_message()
-            users = list(dict.fromkeys(users))
-            channels = list(dict.fromkeys(channels))
-            context.report.update(
-                ExecutionReport(
-                    entity_count=entities_counter,
-                    operation="write",
-                    operation_desc="entities received",
-                    summary=[
-                        ("No. of messages send:", f"{entities_counter}"),
-                        ("No. of direct messages", f"{user_counter}"),
-                        ("No. of channel messages", f"{channel_counter}"),
-                        ("Channels that received a message", f"{', '.join(channels)}"),
-                        ("Users who received a message", f"{', '.join(users)}"),
-                    ],
-                )
-            )
+        if not inputs:
+            return
+        counters = {"entities": 0, "messages": 0, "users": 0, "channels": 0}
+        channels: list[str] = []
+        users: list[str] = []
+        # Entity/ies
+        for item in inputs:
+            column_names = [ep.path for ep in item.schema.paths]
+            # columns of given Entity
+            for entity in item.entities:
+                with suppress(AttributeError):
+                    if context.workflow.status() == "Canceling":
+                        self.log.info("Mattermost plugin cancelled.")
+                        context.report.update(self._report(counters, users, channels))
+                        return
+                counters["entities"] += 1
+                self.user = ""
+                self.channel = ""
+                self.message = ""
+                # row of given Entity
+                for i, column_name in enumerate(column_names):
+                    param_value = entity.values[i][0] if len(entity.values[i]) > 0 else ""
+                    if column_name == "user" and param_value != "":
+                        self.user = param_value
+                        counters["users"] += 1
+                        users.append(self.user)
+                    elif column_name == "channel" and param_value != "":
+                        self.channel = param_value
+                        channels.append(self.channel)
+                        counters["channels"] += 1
+                    elif column_name == "message" and param_value != "":
+                        self.message = param_value
+                self.send_message()
+                # one message per recipient, so an entity naming both counts twice
+                counters["messages"] += bool(self.user) + bool(self.channel)
+                context.report.update(self._report(counters, users, channels))
 
     def post_request_handler(self, url_expand: str, payload: dict | list) -> Response:
         """Handle post requests"""
@@ -331,11 +338,12 @@ class MattermostPlugin(WorkflowPlugin):
         self.post_request_handler("posts", payload)
 
     def send_message(self) -> None:
-        """Will test if the message is sending to user or channel or both"""
-        if self.message:
-            if self.user:
-                self.send_message_to_user()
-            if self.channel:
-                self.send_message_to_channel()
-        else:
+        """Send the message to the configured user, channel or both"""
+        if not self.user and not self.channel:
             raise ValueError("No recipient.")
+        if not self.message:
+            raise ValueError("No message.")
+        if self.user:
+            self.send_message_to_user()
+        if self.channel:
+            self.send_message_to_channel()

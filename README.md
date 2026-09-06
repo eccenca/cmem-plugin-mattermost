@@ -39,8 +39,8 @@ This plugin enables users to send messages either statically or dynamically via 
 To run a mattermost orchestration locally, you can use task:
 
 ```shell-session
-task custom:mattermost:start
-task custom:mattermost:db:load
+task mattermost:start
+task mattermost:db:load
 ```
 
 ### On PyCharm
@@ -55,14 +55,14 @@ Edit Configuration -> Edit Configuration Templates -> Python Test -> Autodetect 
 If you want to run a local test environment with cmem-orchestration you have to connect the Docker container in one network.
 
 ```shell-session
-docker network connect dockerlocalhost_default docker_mattermost_1
+docker network connect dockerlocalhost_default docker-mattermost-1
 ```
 
 ```shell-session
 docker network inspect dockerlocalhost_default
 ```
 
-To set the `URL` parameter, copy the IP address of the docker_mattermost_1 container and append :8065 to the end. This will create the appropriate URL for accessing Mattermost on the local environment.
+To set the `URL` parameter, copy the IP address of the docker-mattermost-1 container and append :8065 to the end. This will create the appropriate URL for accessing Mattermost on the local environment.
 
 ### Mattermost Test Environment
 
@@ -120,6 +120,7 @@ User-ID :   "3j4wossgfirburd63ftd5mq16c"
 | mattermost:db:load | Load the mattermost database from volume/db.sql |
  | mattermost:start   | Start or restart the mattermost orchestration   |
  | mattermost:stop    | Stop the mattermost orchestration               |
+
 [cmem-link]: https://documentation.eccenca.com
 [cmem-shield]: https://img.shields.io/endpoint?url=https://documentation.eccenca.com/latest/badge.json
 [poetry-link]: https://python-poetry.org/
