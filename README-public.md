@@ -9,7 +9,7 @@ This is a plugin for [eccenca Corporate Memory](https://documentation.eccenca.co
 ```
 cmemc admin workspace python install cmem-plugin-mattermost
 ```
-[![workflow](https://github.com/eccenca/cmem-plugin-mattermost/actions/workflows/check.yml/badge.svg)](https://github.com/eccenca/cmem-plugin-mattermost/actions) [![pypi version](https://img.shields.io/pypi/v/cmem-plugin-mattermost)](https://pypi.org/project/cmem-plugin-mattermost) [![license](https://img.shields.io/pypi/l/cmem-plugin-mattermost)](https://pypi.org/project/cmem-plugin-mattermost)
+[![workflow](https://github.com/eccenca/cmem-plugin-mattermost//actions/workflows/check.yml/badge.svg)](https://github.com/eccenca/cmem-plugin-mattermost//actions) [![pypi version](https://img.shields.io/pypi/v/cmem-plugin-mattermost)](https://pypi.org/project/cmem-plugin-mattermost) [![license](https://img.shields.io/pypi/l/cmem-plugin-mattermost)](https://pypi.org/project/cmem-plugin-mattermost)
 [![poetry][poetry-shield]][poetry-link] [![ruff][ruff-shield]][ruff-link] [![mypy][mypy-shield]][mypy-link] [![copier][copier-shield]][copier] 
 
 [cmem-link]: https://documentation.eccenca.com

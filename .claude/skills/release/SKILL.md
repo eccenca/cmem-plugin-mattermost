@@ -83,5 +83,5 @@ git tag -a -m "release 1.4.0" v1.4.0
 git push && git push --tags
 ```
 
-Then watch the publish workflow at https://github.com/eccenca/cmem-plugin-mattermost/actions and confirm the
+Then watch the publish workflow at https://github.com/eccenca/cmem-plugin-mattermost//actions and confirm the
 new version appeared on [PyPI](https://pypi.org/project/cmem-plugin-mattermost/).
