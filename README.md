@@ -2,7 +2,7 @@
 
 Send messages to [Mattermost](https://mattermost.com/) channels and users.
 
-[![eccenca Corporate Memory][cmem-shield]][cmem-link][![workflow](https://github.com/eccenca/cmem-plugin-mattermost/actions/workflows/check.yml/badge.svg)](https://github.com/eccenca/cmem-plugin-mattermost/actions) [![pypi version](https://img.shields.io/pypi/v/cmem-plugin-mattermost)](https://pypi.org/project/cmem-plugin-mattermost) [![license](https://img.shields.io/pypi/l/cmem-plugin-mattermost)](https://pypi.org/project/cmem-plugin-mattermost)
+[![eccenca Corporate Memory][cmem-shield]][cmem-link][![workflow](https://github.com/eccenca/cmem-plugin-mattermost//actions/workflows/check.yml/badge.svg)](https://github.com/eccenca/cmem-plugin-mattermost//actions) [![pypi version](https://img.shields.io/pypi/v/cmem-plugin-mattermost)](https://pypi.org/project/cmem-plugin-mattermost) [![license](https://img.shields.io/pypi/l/cmem-plugin-mattermost)](https://pypi.org/project/cmem-plugin-mattermost)
 [![poetry][poetry-shield]][poetry-link] [![ruff][ruff-shield]][ruff-link] [![mypy][mypy-shield]][mypy-link] [![copier][copier-shield]][copier] 
 
 ## Development
@@ -25,22 +25,22 @@ The plugin can be used as a workflow plugin. For execution, it needs the url of 
 |----------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `url`          | The URL of the Mattermost server to which the plugin should connect.                                                                                                            |
 | `access_token` | The access token of the bot that will be used to send the messages.                                                                                                             |
-| `bot_name`     | The display name or name of the bot used to send the messages.                                                                                                                  |
-| `user`         | The full name, username, nickname, or email address of the user(s) who will receive the message. If the message is to be sent to multiple users, separate them with a comma "," |  
-| `channel`      | The name or display name of the channel(s) to which the message is to be sent. If the message is to be sent to multiple channels, separate them with a comma ","                |
-| `message`      | The message to be sent.                                                                                                                                                         |
+| `bot_name`     | The bot account that sends the messages, named by its username, nickname, email address or full name.                                                                           |
+| `user`         | The single user account that receives the message as a direct message, named by username, nickname, email address or full name.                                                 |
+| `channel`      | The single channel that receives the message, named by its name or its display name.                                                                                            |
+| `message`      | The message text, interpreted by Mattermost as Markdown.                                                                                                                        |
 
 ### Execution
 
-This plugin enables users to send messages either statically or dynamically via entities. For static messages, users and channels must be pre-configured to receive the message. For dynamic messages, input for user, channel, and message can be passed in as entities during workflow execution. Messages can be sent to specified users or channels every time the workflow is executed.
+A recipient and a message configured on the task itself are sent once, before any entity is read. Entities arriving on the input port carry the paths `user`, `channel` and `message`, and each one is sent as a message of its own. Configuring a message on the task while entities also arrive sends both.
 
 ## Running Test
 
 To run a mattermost orchestration locally, you can use task:
 
 ```shell-session
-task custom:mattermost:start
-task custom:mattermost:db:load
+task mattermost:start
+task mattermost:db:load
 ```
 
 ### On PyCharm
@@ -55,14 +55,14 @@ Edit Configuration -> Edit Configuration Templates -> Python Test -> Autodetect 
 If you want to run a local test environment with cmem-orchestration you have to connect the Docker container in one network.
 
 ```shell-session
-docker network connect dockerlocalhost_default docker_mattermost_1
+docker network connect dockerlocalhost_default docker-mattermost-1
 ```
 
 ```shell-session
 docker network inspect dockerlocalhost_default
 ```
 
-To set the `URL` parameter, copy the IP address of the docker_mattermost_1 container and append :8065 to the end. This will create the appropriate URL for accessing Mattermost on the local environment.
+To set the `URL` parameter, copy the IP address of the docker-mattermost-1 container and append :8065 to the end. This will create the appropriate URL for accessing Mattermost on the local environment.
 
 ### Mattermost Test Environment
 
@@ -120,6 +120,7 @@ User-ID :   "3j4wossgfirburd63ftd5mq16c"
 | mattermost:db:load | Load the mattermost database from volume/db.sql |
  | mattermost:start   | Start or restart the mattermost orchestration   |
  | mattermost:stop    | Stop the mattermost orchestration               |
+
 [cmem-link]: https://documentation.eccenca.com
 [cmem-shield]: https://img.shields.io/endpoint?url=https://documentation.eccenca.com/latest/badge.json
 [poetry-link]: https://python-poetry.org/
